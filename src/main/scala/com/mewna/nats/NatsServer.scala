@@ -1,0 +1,58 @@
+package com.mewna.nats
+
+import java.io.IOException
+import java.util.concurrent.{ExecutorService, Executors}
+
+import com.mewna.Mewna
+import io.nats.client.Nats
+import io.nats.streaming.{Message, StreamingConnection, StreamingConnectionFactory, SubscriptionOptions}
+import org.json.JSONObject
+import org.slf4j.{Logger, LoggerFactory}
+
+/**
+ * @author amy
+ * @since 6/6/18.
+ */
+class NatsServer(val mewna: Mewna) {
+  private val pool: ExecutorService = Executors.newCachedThreadPool()
+  private val logger: Logger = LoggerFactory.getLogger(getClass)
+  // TODO: Client ID needs to use container name; use metadata service to fetch this
+  private val connectionFactory: StreamingConnectionFactory = new StreamingConnectionFactory("mewna-nats", "mewna-telepathy-server")
+  
+  private var connection: StreamingConnection = _
+  
+  def connect(): Unit = {
+    try {
+      val natsUrl = System.getenv("NATS_URL")
+      logger.info("Connecting to NATS with: {}", natsUrl)
+      connectionFactory.setNatsConnection(Nats.connect(natsUrl))
+      connection = connectionFactory.createConnection
+      
+      connection.subscribe("twitch-event-queue", "twitch-event-queue", (m: Message) => {
+        val message = new String(m.getData)
+        try {
+          val o = new JSONObject(message)
+          pool.execute(() => {
+            // TODO
+          })
+        } catch {
+          case e: Exception =>
+            logger.error("Caught error while processing socket message:")
+            e.printStackTrace()
+        }
+      }, new SubscriptionOptions.Builder().durableName("mewna-twitch-event-queue-durable").build)
+      
+      connection.subscribe("backend-event-broadcast", (m: Message) => {
+        val message = new String(m.getData)
+        logger.info("Got broadcast: {}", message)
+      })
+    } catch {
+      case e@(_: IOException | _: InterruptedException) =>
+        throw new RuntimeException(e)
+    }
+  }
+  
+  private def pushEvent[T](queue: String, kind: String, data: T): Unit = {
+  
+  }
+}

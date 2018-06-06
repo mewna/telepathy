@@ -1,5 +1,6 @@
 package com.mewna.twitch
 
+import com.mewna.Mewna
 import okhttp3.{MediaType, OkHttpClient, Request, RequestBody}
 import org.json.JSONObject
 
@@ -25,7 +26,7 @@ object TwitchWebhookClient {
  * @author amy
  * @since 6/5/18.
  */
-final class TwitchWebhookClient {
+final class TwitchWebhookClient(val mewna: Mewna) {
   private val client = new OkHttpClient.Builder().build()
   
   def subscribe(topic: String, userId: String, leaseSeconds: Int = 0, cache: Boolean = true): (Map[String, List[String]], JSONObject) = {
@@ -49,13 +50,15 @@ final class TwitchWebhookClient {
       .put("hub.secret", "") // TODO
     val res = client.newCall(new Request.Builder().url(TwitchWebhookClient.WEBHOOK_HUB)
       .post(RequestBody.create(TwitchWebhookClient.JSON, data.toString()))
-      .header("Client-ID", System.getenv("TWITCH_CLIENT"))
+      //.header("Client-ID", System.getenv("TWITCH_CLIENT"))
+        .header("Authorization", "Bearer " + System.getenv("TWITCH_OAUTH").replace("oauth:", ""))
       .build()).execute()
     // TODO: Process headers
     val headers: Map[String, List[String]] = res.headers().toMultimap.asScala.mapValues(_.asScala.toList).toMap
     val body = res.body().string()
     
-    // If we get response length 0, it means that
+    // If we get response length 0, it means that it worked(?).
+    // Yeah I don't get it either...
     (headers, if(body.length == 0) {
       new JSONObject()
     } else {

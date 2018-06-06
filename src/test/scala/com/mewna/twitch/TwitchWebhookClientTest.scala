@@ -34,7 +34,8 @@ class TwitchWebhookClientTest {
   
   @Test
   def testWebhookSubscribe(): Unit = {
-    val client = new TwitchWebhookClient()
+    // Doesn't need a Mewna instance to work
+    val client = new TwitchWebhookClient(null)
     val (headers, json) = client.subscribe(TwitchWebhookClient.TOPIC_STREAM_UP_DOWN, "136359927", cache = false)
     
     // Test response body
@@ -44,7 +45,7 @@ class TwitchWebhookClientTest {
     val ratelimitLimit = headers("ratelimit-limit").head
     val ratelimitReset = headers("ratelimit-reset").head
     
-    assertEquals(30, ratelimitLimit.toInt)
+    assertEquals(120, ratelimitLimit.toInt)
     assertTrue(ratelimitReset.toLong > TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()))
   }
 }
