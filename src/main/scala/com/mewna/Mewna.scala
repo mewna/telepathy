@@ -2,7 +2,7 @@ package com.mewna
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.mewna.twitch.TwitchClient
+import com.mewna.twitch.TwitchPubsubClient
 
 /**
  * @author amy
@@ -21,7 +21,7 @@ class Mewna {
   private def run(): Unit = {
     // NOTE: For now we only care about Twitch
     // We can do other stuff later
-    val twitch = new TwitchClient(System.getenv("TWITCH_OAUTH").replaceAll("oauth:", ""))
+    val twitch = new TwitchPubsubClient(System.getenv("TWITCH_OAUTH").replaceAll("oauth:", ""))
     twitch.connect(() => {
       twitch.channelListen("136359927")
     })

@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory
  * @since 5/5/18.
  */
 //noinspection ScalaUnusedSymbol
-class TwitchClient(val TOKEN: String) {
+class TwitchPubsubClient(val TOKEN: String) {
   val URL = "wss://pubsub-edge.twitch.tv/v1"
   
   private var socket: WebSocket = _
@@ -43,28 +43,32 @@ class TwitchClient(val TOKEN: String) {
         // Schedule PING task
         pool.execute(() => {
           while(true) {
-            // Send a PING payload once a minute. Technically it only needs to be every 5 minutes,
-            // but let's play it safe here.
-            ping() // Only sends if connected
-            try {
-              Thread.sleep(TimeUnit.MINUTES.toMillis(1))
-            } catch {
-              case e: InterruptedException => e.printStackTrace()
+            if(socket != null && socket.isOpen) {
+              // Send a PING payload once a minute. Technically it only needs to be every 5 minutes,
+              // but let's play it safe here.
+              ping() // Only sends if connected
+              try {
+                Thread.sleep(TimeUnit.MINUTES.toMillis(1))
+              } catch {
+                case e: InterruptedException => e.printStackTrace()
+              }
             }
           }
         })
         // Schedule reconnect task
         pool.execute(() => {
           while(true) {
-            // Check if we need to reconnect every 10 seconds
-            if(lastPongTime - System.currentTimeMillis() > TimeUnit.SECONDS.toMillis(10)) {
-              // It's been more than 10 seconds, reconnect
-              reconnect()
-            }
-            try {
-              Thread.sleep(TimeUnit.SECONDS.toMillis(10))
-            } catch {
-              case e: InterruptedException => e.printStackTrace()
+            if(socket != null && socket.isOpen) {
+              // Check if we need to reconnect every 10 seconds
+              if(lastPongTime - System.currentTimeMillis() > TimeUnit.SECONDS.toMillis(10)) {
+                // It's been more than 10 seconds, reconnect
+                reconnect()
+              }
+              try {
+                Thread.sleep(TimeUnit.SECONDS.toMillis(10))
+              } catch {
+                case e: InterruptedException => e.printStackTrace()
+              }
             }
           }
         })

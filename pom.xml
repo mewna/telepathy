@@ -11,8 +11,8 @@
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
         <encoding>UTF-8</encoding>
-        <scala.version>2.11.7</scala.version>
-        <scala.compat.version>2.11</scala.compat.version>
+        <scala.version>2.12.6</scala.version>
+        <scala.compat.version>2.12</scala.compat.version>
         <jackson.version>2.9.5</jackson.version>
         <twitch.version>v0.10.0</twitch.version>
         <reddit.version>1.0.0</reddit.version>
@@ -20,6 +20,8 @@
         <nv.websocket.version>2.4</nv.websocket.version>
         <org.json.version>20180130</org.json.version>
         <logback.version>1.2.3</logback.version>
+        <okhttp.version>3.10.0</okhttp.version>
+        <spark.version>2.7.2</spark.version>
     </properties>
 
     <repositories>
@@ -35,6 +37,33 @@
             <artifactId>scala-library</artifactId>
             <version>${scala.version}</version>
         </dependency>
+
+        <!-- OkHTTP -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>${okhttp.version}</version>
+        </dependency>
+
+        <!-- SparkJava -->
+        <dependency>
+            <groupId>com.sparkjava</groupId>
+            <artifactId>spark-core</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sparkjava</groupId>
+            <artifactId>spark-core</artifactId>
+            <version>${spark.version}</version>
+            <classifier>sources</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.sparkjava</groupId>
+            <artifactId>spark-core</artifactId>
+            <version>${spark.version}</version>
+            <classifier>javadoc</classifier>
+        </dependency>
+
 
         <!-- Reddit -->
         <dependency>
@@ -125,12 +154,11 @@
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-scala_2.11</artifactId>
+            <artifactId>jackson-module-scala_2.12</artifactId>
             <version>${jackson.version}</version>
         </dependency>
 
         <!-- org.json -->
-
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>

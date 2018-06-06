@@ -1,20 +1,19 @@
 package com.mewna.twitch
 
-import org.scalatest.junit.AssertionsForJUnit
-import org.junit.Assert._
 import org.json.JSONObject
+import org.junit.Assert._
 import org.junit.Test
 
 /**
  * @author amy
  * @since 5/5/18.
  */
-class TwitchClientTest {
+class TwitchPubsubClientTest {
   @Test
   def testRecvMessage(): Unit = {
     // Shit's gonna get printed out here; that's fine
     
-    val client = new TwitchClient("44h1k13746815ab1r2")
+    val client = new TwitchPubsubClient("44h1k13746815ab1r2")
     // Should pass
     client.addPongNonce("44h1k13746815ab1r2")
     assertEquals(None, client.recvMessage(new JSONObject().put("type", "PONG").put("nonce", "44h1k13746815ab1r2")))
