@@ -20,6 +20,7 @@ object TwitchWebhookClient {
    * {{{ TOPIC_STREAM_UP_DOWN.format(userId) }}}
    */
   val TOPIC_STREAM_UP_DOWN: String = "https://api.twitch.tv/helix/streams?user_id=%s"
+  val GET_USERS = "https://api.twitch.tv/helix/users"
 }
 
 /**
@@ -51,14 +52,32 @@ final class TwitchWebhookClient(val mewna: Mewna) {
     val res = client.newCall(new Request.Builder().url(TwitchWebhookClient.WEBHOOK_HUB)
       .post(RequestBody.create(TwitchWebhookClient.JSON, data.toString()))
       //.header("Client-ID", System.getenv("TWITCH_CLIENT"))
-        .header("Authorization", "Bearer " + System.getenv("TWITCH_OAUTH").replace("oauth:", ""))
+      .header("Authorization", "Bearer " + System.getenv("TWITCH_OAUTH").replace("oauth:", ""))
       .build()).execute()
-    // TODO: Process headers
     val headers: Map[String, List[String]] = res.headers().toMultimap.asScala.mapValues(_.asScala.toList).toMap
     val body = res.body().string()
     
     // If we get response length 0, it means that it worked(?).
     // Yeah I don't get it either...
+    //
+    // Alright, after having tested this more:
+    // It *looks* like a success => empty response, but *with* headers.
+    // If you send a malformed request in some way, it does yell at you, so I guess
+    // that it's only in the case of success that the body is empty?
+    (headers, if(body.length == 0) {
+      new JSONObject()
+    } else {
+      new JSONObject(body)
+    })
+  }
+  
+  def getUserById(id: String): (Map[String, List[String]], JSONObject) = {
+    val res = client.newCall(new Request.Builder().url(TwitchWebhookClient.GET_USERS + "?id=" + id)
+      .get()
+      .header("Authorization", "Bearer " + System.getenv("TWITCH_OAUTH").replace("oauth:", ""))
+      .build()).execute()
+    val body = res.body().string()
+    val headers: Map[String, List[String]] = res.headers().toMultimap.asScala.mapValues(_.asScala.toList).toMap
     (headers, if(body.length == 0) {
       new JSONObject()
     } else {

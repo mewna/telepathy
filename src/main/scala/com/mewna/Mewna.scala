@@ -1,8 +1,12 @@
 package com.mewna
 
+import java.util.concurrent.{ExecutorService, Executors}
+
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.mewna.twitch.TwitchPubsubClient
+import com.mewna.nats.NatsServer
+import com.mewna.twitch.TwitchWebhookClient
+import com.mewna.twitch.ratelimit.TwitchRatelimiter
 import com.redis.{RedisClient, RedisClientPool}
 
 /**
@@ -19,19 +23,27 @@ object Mewna {
 }
 
 class Mewna {
-  val api = new API()
-  private var redisPool: RedisClientPool = _
+  val api = new API(this)
+  val threadPool: ExecutorService = Executors.newCachedThreadPool()
+  val twitchWebhookClient: TwitchWebhookClient = new TwitchWebhookClient(this)
+  val twitchRatelimiter: TwitchRatelimiter = new TwitchRatelimiter(this)
+  private val redisPool: RedisClientPool = new RedisClientPool(System.getenv("REDIS_HOST"), 6379)
+  private val nats: NatsServer = new NatsServer(this)
   
   private def run(): Unit = {
-    api.startServer(System.getenv("API_PORT").toInt)
-    redisPool = new RedisClientPool(System.getenv("REDIS_HOST"), 6379)
-    
     // NOTE: For now we only care about Twitch
     // We can do other stuff later
+    
+    nats.connect()
+    api.startServer(System.getenv("API_PORT").toInt)
+    
+    // TODO: Handle Twitch pubsub somehow
+    /*
     val twitch = new TwitchPubsubClient(System.getenv("TWITCH_OAUTH").replaceAll("oauth:", ""))
     twitch.connect(() => {
       twitch.channelListen("136359927")
     })
+    */
   }
   
   def redis(callback: RedisClient => Unit): Unit = {

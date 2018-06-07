@@ -2,8 +2,9 @@ package com.mewna.twitch
 
 import java.util
 import java.util.UUID
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.TimeUnit
 
+import com.mewna.Mewna
 import com.mewna.util.Helpers._
 import com.neovisionaries.ws.client._
 import org.json.{JSONArray, JSONObject}
@@ -18,7 +19,7 @@ import org.slf4j.LoggerFactory
  * @since 5/5/18.
  */
 //noinspection ScalaUnusedSymbol
-class TwitchPubsubClient(val TOKEN: String) {
+class TwitchPubsubClient(val mewna: Mewna, val TOKEN: String) {
   val URL = "wss://pubsub-edge.twitch.tv/v1"
   
   private var socket: WebSocket = _
@@ -26,7 +27,6 @@ class TwitchPubsubClient(val TOKEN: String) {
   private var lastPingNonce = ""
   private var lastPongTime: Long = -1L
   
-  private val pool = Executors.newCachedThreadPool()
   private val logger = LoggerFactory.getLogger(getClass)
   
   private var pendingNonces = Set[String]()
@@ -41,7 +41,7 @@ class TwitchPubsubClient(val TOKEN: String) {
     socket.addListener(new WebSocketAdapter {
       override def onConnected(websocket: WebSocket, headers: util.Map[String, util.List[String]]): Unit = {
         // Schedule PING task
-        pool.execute(() => {
+        mewna.threadPool.execute(() => {
           while(true) {
             if(socket != null && socket.isOpen) {
               // Send a PING payload once a minute. Technically it only needs to be every 5 minutes,
@@ -56,7 +56,7 @@ class TwitchPubsubClient(val TOKEN: String) {
           }
         })
         // Schedule reconnect task
-        pool.execute(() => {
+        mewna.threadPool.execute(() => {
           while(true) {
             if(socket != null && socket.isOpen) {
               // Check if we need to reconnect every 10 seconds
@@ -185,7 +185,7 @@ class TwitchPubsubClient(val TOKEN: String) {
   def channelListen(id: String): Unit = {
     listen("video-playback-by-id", id)
   }
-
+  
   private def stringify[X](x: X): String = {
     x.toString
   }

@@ -6,7 +6,7 @@ import spark.Spark._
  * @author amy
  * @since 6/6/18.
  */
-class API {
+class API(val mewna: Mewna) {
   def startServer(portNum: Int): Unit = {
     port(portNum)
     path("/api", () => {

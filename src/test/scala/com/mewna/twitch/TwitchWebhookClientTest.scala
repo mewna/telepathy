@@ -33,7 +33,7 @@ class TwitchWebhookClientTest {
    */
   
   @Test
-  def testWebhookSubscribe(): Unit = {
+  def testWebhookSubscribeNoLength(): Unit = {
     // Doesn't need a Mewna instance to work
     val client = new TwitchWebhookClient(null)
     val (headers, json) = client.subscribe(TwitchWebhookClient.TOPIC_STREAM_UP_DOWN, "136359927", cache = false)
