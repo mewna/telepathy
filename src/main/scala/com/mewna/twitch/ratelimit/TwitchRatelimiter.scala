@@ -65,6 +65,7 @@ class TwitchRatelimiter(val mewna: Mewna) {
             // Sleep until we're ready
             try {
               Thread.sleep(60000L)
+              mewna.redis(redis => redis.hset(HASH_KEY, HASH_RATELIMIT_REMAINING, 120))
               logger.info("Finished waiting!")
             } catch {
               case e: InterruptedException => e.printStackTrace()
