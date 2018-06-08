@@ -71,7 +71,6 @@ class API(val mewna: Mewna) {
     port(portNum)
     before("/*", (req, res) => {
       logger.info("Request: " + new JSONObject(req))
-      ""
     })
     get("/", (_, _) => "memes")
     path("/api", () => {
