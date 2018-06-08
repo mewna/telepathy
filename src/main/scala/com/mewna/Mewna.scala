@@ -61,7 +61,9 @@ class Mewna {
   
   def redis(callback: RedisClient => Unit): Unit = {
     redisPool.withClient {
-      client => callback.apply(client)
+      client =>
+        client.auth(System.getenv("REDIS_PASS"))
+        callback.apply(client)
     }
   }
 }
