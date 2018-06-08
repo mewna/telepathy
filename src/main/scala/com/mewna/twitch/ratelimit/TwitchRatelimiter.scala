@@ -73,6 +73,7 @@ class TwitchRatelimiter(val mewna: Mewna) {
             })
             try {
               Thread.sleep(TimeUnit.SECONDS.toMillis(timeSeconds + 1000 - TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis())))
+              logger.info("Finished waiting!")
             } catch {
               case e: InterruptedException => e.printStackTrace()
             }
