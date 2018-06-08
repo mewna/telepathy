@@ -103,6 +103,7 @@ final class TwitchWebhookClient(val mewna: Mewna) {
     val body = res.body().string()
     val headers: Map[String, List[String]] = res.headers().toMultimap.asScala.mapValues(_.asScala.toList).toMap
     (headers, if(body.length == 0) {
+      logger.warn("Empty response body for fetch user {}", id)
       new JSONObject()
     } else {
       new JSONObject(body).getJSONArray("data").get(0).asInstanceOf[JSONObject]
