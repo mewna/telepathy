@@ -1,5 +1,6 @@
 package com.mewna
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.json.JSONObject
 import org.slf4j.{Logger, LoggerFactory}
 import spark.Request
@@ -70,7 +71,7 @@ class API(val mewna: Mewna) {
   def startServer(portNum: Int): Unit = {
     port(portNum)
     before("/*", (req, res) => {
-      logger.info("Request: " + new JSONObject(req))
+      logger.info("Request: " + new ObjectMapper().writeValueAsString(req))
     })
     get("/", (_, _) => "memes")
     path("/api", () => {
