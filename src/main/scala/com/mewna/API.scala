@@ -2,7 +2,7 @@ package com.mewna
 
 import org.json.JSONObject
 import org.slf4j.{Logger, LoggerFactory}
-import spark.{Request, Spark}
+import spark.Request
 import spark.Spark._
 
 /**
@@ -75,39 +75,39 @@ class API(val mewna: Mewna) {
         path("/twitch", () => {
           post("/follows", (req, _) => {
             handleFollows(req)
-            ""
+            new JSONObject()
           })
           post("/streams", (req, _) => {
             handleStreamUpDown(req)
-            ""
+            new JSONObject()
           })
           
           // Handle Twitch being retarded
           post("/follows", "null", (req, _) => {
             handleFollows(req)
-            ""
+            new JSONObject()
           })
           post("/streams", "null", (req, _) => {
             handleStreamUpDown(req)
-            ""
+            new JSONObject()
           })
           
           post("/follows", null, (req, _) => {
             handleFollows(req)
-            ""
+            new JSONObject()
           })
           post("/streams", null, (req, _) => {
             handleStreamUpDown(req)
-            ""
+            new JSONObject()
           })
-  
+          
           post("/follows", "*", (req, _) => {
             handleFollows(req)
-            ""
+            new JSONObject()
           })
           post("/streams", "*", (req, _) => {
             handleStreamUpDown(req)
-            ""
+            new JSONObject()
           })
         })
       })
