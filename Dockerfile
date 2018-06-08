@@ -6,5 +6,8 @@ RUN mvn -B -q clean package
 
 FROM openjdk:8-jre-alpine
 COPY --from=0 /app/target/telepathy*.jar /app/telepathy.jar
+RUN apk update && apk add nginx
+RUN mkdir -pv /etc/nginx/conf.d
+COPY ./telepathy.conf /etc/nginx/conf.d/telepathy.conf
 
-ENTRYPOINT ["/usr/bin/java", "-Xms128M", "-Xmx256M", "-jar", "/app/telepathy.jar"]
+ENTRYPOINT ["sh", "entrypoint.sh"]

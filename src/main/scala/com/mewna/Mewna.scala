@@ -35,7 +35,7 @@ class Mewna {
     // NOTE: For now we only care about Twitch
     // We can do other stuff later
     nats.connect()
-    api.startServer(System.getenv("API_PORT").toInt)
+    api.startServer(4444)
     twitchRatelimiter.startPollingQueue()
     val subscribes: String = System.getenv("subscribes")
     if(subscribes != null) {

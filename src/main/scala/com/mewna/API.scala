@@ -70,9 +70,6 @@ class API(val mewna: Mewna) {
   
   def startServer(portNum: Int): Unit = {
     port(portNum)
-    before("/*", (req, res) => {
-      logger.info("Request: " + new ObjectMapper().writeValueAsString(req))
-    })
     get("/", (_, _) => "memes")
     path("/api", () => {
       path("/v1", () => {
@@ -96,11 +93,11 @@ class API(val mewna: Mewna) {
             new JSONObject()
           })
           
-          post("/follows", null, (req, _) => {
+          post("/follows", "*/*", (req, _) => {
             handleFollows(req)
             new JSONObject()
           })
-          post("/streams", null, (req, _) => {
+          post("/streams", "*/*", (req, _) => {
             handleStreamUpDown(req)
             new JSONObject()
           })
