@@ -93,6 +93,7 @@ class TwitchRatelimiter(val mewna: Mewna) {
                   handleRatelimitHeaders(headers)
                   outerHeaders = headers
                   res = body
+                  logger.info("Fetched user: {}", res)
                   redis.set(USER_CACHE_FORMAT.format(userId), res.toString())
                   // Expire cache after a day
                   redis.expire(USER_CACHE_FORMAT.format(userId), 86400)
