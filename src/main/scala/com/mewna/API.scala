@@ -2,7 +2,7 @@ package com.mewna
 
 import org.json.JSONObject
 import org.slf4j.{Logger, LoggerFactory}
-import spark.Request
+import spark.{Request, Spark}
 import spark.Spark._
 
 /**
@@ -88,16 +88,24 @@ class API(val mewna: Mewna) {
             ""
           })
           post("/streams", "null", (req, _) => {
-            // TODO
             handleStreamUpDown(req)
             ""
           })
+          
           post("/follows", null, (req, _) => {
             handleFollows(req)
             ""
           })
           post("/streams", null, (req, _) => {
-            // TODO
+            handleStreamUpDown(req)
+            ""
+          })
+  
+          post("/follows", "*", (req, _) => {
+            handleFollows(req)
+            ""
+          })
+          post("/streams", "*", (req, _) => {
             handleStreamUpDown(req)
             ""
           })
