@@ -36,6 +36,18 @@ class Mewna {
     
     nats.connect()
     api.startServer(System.getenv("API_PORT").toInt)
+    val subscribes: String = System.getenv("subscribes")
+    if(subscribes != null) {
+      val ids = subscribes.split(",")
+      ids.foreach(e => {
+        twitchRatelimiter.queueSubscribe(TwitchWebhookClient.TOPIC_STREAM_UP_DOWN, e, (_, _) => {
+          println("Subscribed to updown for " + e)
+        })
+        twitchRatelimiter.queueSubscribe(TwitchWebhookClient.TOPIC_FOLLOWS, e, (_, _) => {
+          println("Subscribed to follow for " + e)
+        })
+      })
+    }
     
     // TODO: Handle Twitch pubsub somehow
     /*
