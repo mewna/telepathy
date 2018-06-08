@@ -36,6 +36,7 @@ class Mewna {
     
     nats.connect()
     api.startServer(System.getenv("API_PORT").toInt)
+    twitchRatelimiter.startPollingQueue()
     val subscribes: String = System.getenv("subscribes")
     if(subscribes != null) {
       val ids = subscribes.split(",")
