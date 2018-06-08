@@ -2,10 +2,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.mewna</groupId>
-  <artifactId>social-notification-server</artifactId>
+  <artifactId>telepathy</artifactId>
   <name>${project.artifactId}</name>
   <version>1.0-SNAPSHOT</version>
-  <description>My wonderfull scala app</description>
+  <description>Telepathy is the external API interface for Mewna (mewna.com).</description>
   <build>
     <sourceDirectory>src/main/scala</sourceDirectory>
     <testSourceDirectory>src/test/scala</testSourceDirectory>
@@ -79,6 +79,34 @@
   </repositories>
   <dependencies>
     <dependency>
+      <groupId>net.debasishg</groupId>
+      <artifactId>redisclient_2.12</artifactId>
+      <version>3.7</version>
+      <classifier>sources</classifier>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>net.debasishg</groupId>
+      <artifactId>redisclient_2.12</artifactId>
+      <version>3.7</version>
+      <classifier>javadoc</classifier>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.sparkjava</groupId>
+      <artifactId>spark-core</artifactId>
+      <version>2.7.2</version>
+      <classifier>sources</classifier>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.sparkjava</groupId>
+      <artifactId>spark-core</artifactId>
+      <version>2.7.2</version>
+      <classifier>javadoc</classifier>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
       <groupId>com.neovisionaries</groupId>
       <artifactId>nv-websocket-client</artifactId>
       <version>2.4</version>
@@ -145,6 +173,20 @@
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
       <version>1.2.3</version>
+      <classifier>javadoc</classifier>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.nats</groupId>
+      <artifactId>java-nats-streaming</artifactId>
+      <version>0.5.0</version>
+      <classifier>sources</classifier>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.nats</groupId>
+      <artifactId>java-nats-streaming</artifactId>
+      <version>0.5.0</version>
       <classifier>javadoc</classifier>
       <scope>compile</scope>
     </dependency>
@@ -199,12 +241,16 @@
     <encoding>UTF-8</encoding>
     <org.json.version>20180130</org.json.version>
     <maven.compiler.target>1.6</maven.compiler.target>
+    <okhttp.version>3.10.0</okhttp.version>
+    <nats.version>0.5.0</nats.version>
+    <redis.version>3.7</redis.version>
     <logback.version>1.2.3</logback.version>
     <reddit.version>1.0.0</reddit.version>
     <jackson.version>2.9.5</jackson.version>
     <twitch.version>v0.10.0</twitch.version>
     <scala.version>2.12.6</scala.version>
     <scala.compat.version>2.12</scala.compat.version>
+    <spark.version>2.7.2</spark.version>
     <maven.compiler.source>1.6</maven.compiler.source>
   </properties>
 </project>
