@@ -27,13 +27,13 @@ class Mewna {
   val threadPool: ExecutorService = Executors.newCachedThreadPool()
   val twitchWebhookClient: TwitchWebhookClient = new TwitchWebhookClient(this)
   val twitchRatelimiter: TwitchRatelimiter = new TwitchRatelimiter(this)
-  private val redisPool: RedisClientPool = new RedisClientPool(System.getenv("REDIS_HOST"), 6379)
+  private val redisPool: RedisClientPool = new RedisClientPool(System.getenv("REDIS_HOST"), 6379,
+    secret = Option[String](System.getenv("REDIS_PASS")))
   private val nats: NatsServer = new NatsServer(this)
   
   private def run(): Unit = {
     // NOTE: For now we only care about Twitch
     // We can do other stuff later
-    
     nats.connect()
     api.startServer(System.getenv("API_PORT").toInt)
     twitchRatelimiter.startPollingQueue()
@@ -62,7 +62,6 @@ class Mewna {
   def redis(callback: RedisClient => Unit): Unit = {
     redisPool.withClient {
       client =>
-        client.auth(System.getenv("REDIS_PASS"))
         callback.apply(client)
     }
   }
