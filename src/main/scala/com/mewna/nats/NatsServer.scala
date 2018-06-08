@@ -31,37 +31,41 @@ class NatsServer(val mewna: Mewna) {
   def connect(): Unit = {
     try {
       val natsUrl = System.getenv("NATS_URL")
-      logger.info("Connecting to NATS with: {}", natsUrl)
-      connectionFactory.setNatsConnection(Nats.connect(natsUrl))
-      connection = connectionFactory.createConnection
-      
-      connection.subscribe("twitch-event-queue", "twitch-event-queue", (m: Message) => {
-        val message = new String(m.getData)
-        try {
-          val o = new JSONObject(message)
-          val data = o.getJSONObject("d")
-          mewna.threadPool.execute(() => {
-            // TODO: Un/subscribe
-            o.getString("t") match {
-              case "TWITCH_SUBSCRIBE" => {
-              
+      if(natsUrl != null) {
+        logger.info("Connecting to NATS with: {}", natsUrl)
+        connectionFactory.setNatsConnection(Nats.connect(natsUrl))
+        connection = connectionFactory.createConnection
+        
+        connection.subscribe("twitch-event-queue", "twitch-event-queue", (m: Message) => {
+          val message = new String(m.getData)
+          try {
+            val o = new JSONObject(message)
+            val data = o.getJSONObject("d")
+            mewna.threadPool.execute(() => {
+              // TODO: Un/subscribe
+              o.getString("t") match {
+                case "TWITCH_SUBSCRIBE" => {
+                
+                }
+                case "TWITCH_UNSUBSCRIBE" => {
+                
+                }
               }
-              case "TWITCH_UNSUBSCRIBE" => {
-              
-              }
-            }
-          })
-        } catch {
-          case e: Exception =>
-            logger.error("Caught error while processing socket message:")
-            e.printStackTrace()
-        }
-      }, new SubscriptionOptions.Builder().durableName("mewna-twitch-event-queue-durable").build)
-      
-      connection.subscribe("backend-event-broadcast", (m: Message) => {
-        val message = new String(m.getData)
-        logger.info("Got broadcast: {}", message)
-      })
+            })
+          } catch {
+            case e: Exception =>
+              logger.error("Caught error while processing socket message:")
+              e.printStackTrace()
+          }
+        }, new SubscriptionOptions.Builder().durableName("mewna-twitch-event-queue-durable").build)
+        
+        connection.subscribe("backend-event-broadcast", (m: Message) => {
+          val message = new String(m.getData)
+          logger.info("Got broadcast: {}", message)
+        })
+      } else {
+        logger.warn("No NATS_URL, not connecting...")
+      }
     } catch {
       case e@(_: IOException | _: InterruptedException) =>
         throw new RuntimeException(e)

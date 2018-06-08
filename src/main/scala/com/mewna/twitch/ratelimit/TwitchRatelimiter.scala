@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import com.mewna.Mewna
 import org.json.JSONObject
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.mutable
 
@@ -12,10 +13,14 @@ import scala.collection.mutable
  * @since 6/6/18.
  */
 class TwitchRatelimiter(val mewna: Mewna) {
-  private val HASH_KEY = "telepathy-twitch-ratelimiter"
+  private val HASH_KEY = "telepathy:twitch:ratelimiter"
   private val HASH_RATELIMIT_REMAINING = "ratelimit-remaining"
   private val HASH_RATELIMIT_LIMIT = "ratelimit-limit"
   private val HASH_RATELIMIT_RESET_TIME = "ratelimit-reset-time"
+  
+  private val USER_CACHE_FORMAT = "telepathy:twitch:cache:user:%s"
+  
+  private val logger: Logger = LoggerFactory.getLogger(getClass)
   
   private var queue = new mutable.Queue[(String, String, String, (Map[String, List[String]], JSONObject) => Unit)]()
   
@@ -25,6 +30,10 @@ class TwitchRatelimiter(val mewna: Mewna) {
   
   def queueUnsubscribe(topic: String, userId: String, callback: (Map[String, List[String]], JSONObject) => Unit = (_, _) => {}): Unit = {
     queue += (("unsubscribe", topic, userId, callback))
+  }
+  
+  def queueLookupUser(userId: String, callback: (Map[String, List[String]], JSONObject) => Unit = (_, _) => {}): Unit = {
+    queue += (("lookup", null, userId, callback))
   }
   
   def startPollingQueue(): Unit = {
@@ -52,8 +61,10 @@ class TwitchRatelimiter(val mewna: Mewna) {
           })
           // Just play it safe
           if(ratelimitRemaining < 5) {
+            logger.warn("Hit ratelimit ({} remaining), waiting until it expires...")
             // Sleep until we're ready
-            var timeSeconds = 60 // If we can't get data for w/e reason, wait a minute
+            // If we can't get data for w/e reason, wait a minute
+            var timeSeconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() + 60000)
             mewna.redis(redis => {
               val string = redis.hget(HASH_KEY, HASH_RATELIMIT_RESET_TIME)
               if(string.isDefined) {
@@ -78,9 +89,22 @@ class TwitchRatelimiter(val mewna: Mewna) {
               handleRatelimitHeaders(headers)
               callback(headers, body)
             case "lookup" =>
-              val (headers, body) = mewna.twitchWebhookClient.getUserById(userId)
-              handleRatelimitHeaders(headers)
-              callback(headers, body)
+              mewna.redis(redis => {
+                var res: JSONObject = null
+                var outerHeaders: Map[String, List[String]] = null
+                if(redis.exists(USER_CACHE_FORMAT.format(userId))) {
+                  res = new JSONObject(redis.get(USER_CACHE_FORMAT.format(userId)))
+                } else {
+                  val (headers, body) = mewna.twitchWebhookClient.getUserById(userId)
+                  handleRatelimitHeaders(headers)
+                  outerHeaders = headers
+                  res = body
+                  redis.set(USER_CACHE_FORMAT.format(userId), res.toString())
+                  // Expire cache after a day
+                  redis.expire(USER_CACHE_FORMAT.format(userId), 86400)
+                }
+                callback(outerHeaders, res)
+              })
           }
         }
       }

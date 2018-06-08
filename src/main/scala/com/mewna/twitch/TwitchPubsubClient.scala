@@ -78,7 +78,6 @@ class TwitchPubsubClient(val mewna: Mewna, val TOKEN: String) {
       
       override def onDisconnected(websocket: WebSocket, serverCloseFrame: WebSocketFrame, clientCloseFrame: WebSocketFrame,
                                   closedByServer: Boolean): Unit = {
-        // TODO: Reconnect
         logger.warn("Disconnected from socket: (server? = {})", closedByServer)
         reconnect()
       }

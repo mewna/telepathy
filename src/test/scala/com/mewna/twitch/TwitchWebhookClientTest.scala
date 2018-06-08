@@ -34,18 +34,21 @@ class TwitchWebhookClientTest {
   
   @Test
   def testWebhookSubscribeNoLength(): Unit = {
-    // Doesn't need a Mewna instance to work
-    val client = new TwitchWebhookClient(null)
-    val (headers, json) = client.subscribe(TwitchWebhookClient.TOPIC_STREAM_UP_DOWN, "136359927", cache = false)
-    
-    // Test response body
-    assertEquals("{}", json.toString())
-    
-    // Test headers
-    val ratelimitLimit = headers("ratelimit-limit").head
-    val ratelimitReset = headers("ratelimit-reset").head
-    
-    assertEquals(120, ratelimitLimit.toInt)
-    assertTrue(ratelimitReset.toLong > TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()))
+    // Only test if we've been given a token to test with
+    if(System.getenv("TWITCH_OAUTH") != null) {
+      // Doesn't need a Mewna instance to work
+      val client = new TwitchWebhookClient(null)
+      val (headers, json) = client.subscribe(TwitchWebhookClient.TOPIC_STREAM_UP_DOWN, "136359927", cache = false)
+  
+      // Test response body
+      assertEquals("{}", json.toString())
+  
+      // Test headers
+      val ratelimitLimit = headers("ratelimit-limit").head
+      val ratelimitReset = headers("ratelimit-reset").head
+  
+      assertEquals(120, ratelimitLimit.toInt)
+      assertTrue(ratelimitReset.toLong > TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()))
+    }
   }
 }

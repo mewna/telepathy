@@ -1,8 +1,11 @@
 package com.mewna.twitch
 
+import java.util.concurrent.TimeUnit
+
 import com.mewna.Mewna
 import okhttp3.{MediaType, OkHttpClient, Request, RequestBody}
 import org.json.JSONObject
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConverters._
 
@@ -29,6 +32,10 @@ object TwitchWebhookClient {
  */
 final class TwitchWebhookClient(val mewna: Mewna) {
   private val client = new OkHttpClient.Builder().build()
+  private val WEBHOOK_STORE = "telepathy:webhook:store"
+  val logger: Logger = LoggerFactory.getLogger(getClass)
+  
+  // TODO: Start webhook refresher here
   
   def subscribe(topic: String, userId: String, leaseSeconds: Int = 0, cache: Boolean = true): (Map[String, List[String]], JSONObject) = {
     updateHook("subscribe", topic, userId, leaseSeconds, cache)
@@ -40,8 +47,8 @@ final class TwitchWebhookClient(val mewna: Mewna) {
   
   def updateHook(mode: String, topic: String, userId: String, leaseSeconds: Int = 0, cache: Boolean = true): (Map[String, List[String]], JSONObject) = {
     val callback = topic match {
-      case TwitchWebhookClient.TOPIC_FOLLOWS => "https://telepathy.mewna.com/api/v1/twitch/follows"
-      case TwitchWebhookClient.TOPIC_STREAM_UP_DOWN => "https://telepathy.mewna.com/api/v1/twitch/streams"
+      case TwitchWebhookClient.TOPIC_FOLLOWS => System.getenv("DOMAIN") + "/api/v1/twitch/follows"
+      case TwitchWebhookClient.TOPIC_STREAM_UP_DOWN => System.getenv("DOMAIN") + "/api/v1/twitch/streams"
     }
     val data = new JSONObject()
       .put("hub.callback", callback)
@@ -56,6 +63,23 @@ final class TwitchWebhookClient(val mewna: Mewna) {
       .build()).execute()
     val headers: Map[String, List[String]] = res.headers().toMultimap.asScala.mapValues(_.asScala.toList).toMap
     val body = res.body().string()
+    logger.debug("Request headers: {}", headers)
+    logger.debug("   Request body: {}", body)
+    
+    // If the hook is for more than a day, cache it so that
+    if(leaseSeconds > 86400) {
+      mode match {
+        case "subscribe" =>
+          mewna.redis(redis => {
+            // Set it to be one day before the lease expires, so that the refresher can catch it
+            redis.hset(WEBHOOK_STORE, userId, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(leaseSeconds - 86400))
+          })
+        case "unsubscribe" =>
+          mewna.redis(redis => {
+            redis.hdel(WEBHOOK_STORE, userId)
+          })
+      }
+    }
     
     // If we get response length 0, it means that it worked(?).
     // Yeah I don't get it either...
@@ -83,50 +107,5 @@ final class TwitchWebhookClient(val mewna: Mewna) {
     } else {
       new JSONObject(body)
     })
-  }
-  
-  /**
-   * Example payload:
-   * {{{
-   * {
-   *   "data": [{
-   *     "from_id":"1336",
-   *     "to_id":"1337",
-   *     "followed_at": "2017-08-22T22:55:24Z"
-   *   }]
-   * }
-   * }}}
-   *
-   * @param followData JSON data sent from the webhook
-   */
-  def handleFollow(followData: JSONObject): Unit = {
-    // TODO
-  }
-  
-  /**
-   * Example payload:
-   * {{{
-   * {
-   *   "data": [
-   *     {
-   *       "id": "0123456789", // Stream id
-   *       "user_id": "5678", // Streamer's user id
-   *       "game_id": "21779", // Game's Twitch id
-   *       "community_ids": [], // IDs of communities the streamer is streaming with
-   *       "type": "live", // Should be "live", will only be "" in case of errpr
-   *       "title": "Best Stream Ever", // Duh
-   *       "viewer_count": 417, // Duh
-   *       "started_at": "2017-12-01T10:09:45Z", // Duh
-   *       "language": "en", // Duh
-   *       "thumbnail_url": "https://link/to/thumbnail.jpg" // Duh
-   *     }
-   *   ]
-   * }
-   * }}}
-   *
-   * @param streamData Data about the stream going up / down
-   */
-  def handleStream(streamData: JSONObject): Unit = {
-    // TODO
   }
 }
