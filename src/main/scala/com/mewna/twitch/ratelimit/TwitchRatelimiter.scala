@@ -116,7 +116,11 @@ class TwitchRatelimiter(val mewna: Mewna) {
       // Grab the headers we care about
       val remaining = headers("ratelimit-remaining").head
       val limit = headers("ratelimit-limit").head
-      val resetTime = headers("ratelimit-reset-time").head
+      val resetTime = if(headers.contains("ratelimit-reset-time")) {
+        headers("ratelimit-reset-time").head
+      } else {
+        TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()) + 60
+      }
       redis.hset(HASH_KEY, HASH_RATELIMIT_REMAINING, remaining + "")
       redis.hset(HASH_KEY, HASH_RATELIMIT_LIMIT, limit + "")
       redis.hset(HASH_KEY, HASH_RATELIMIT_RESET_TIME, resetTime + "")
