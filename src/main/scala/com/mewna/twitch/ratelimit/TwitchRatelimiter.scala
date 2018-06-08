@@ -85,7 +85,7 @@ class TwitchRatelimiter(val mewna: Mewna) {
             case "lookup" =>
               mewna.redis(redis => {
                 if(redis.exists(USER_CACHE_FORMAT.format(userId))) {
-                  var res = new JSONObject(redis.get(USER_CACHE_FORMAT.format(userId)))
+                  var res = new JSONObject(redis.get(USER_CACHE_FORMAT.format(userId)).get)
                   var outerHeaders: Map[String, List[String]] = null
                   callback(outerHeaders, res)
                 } else {
