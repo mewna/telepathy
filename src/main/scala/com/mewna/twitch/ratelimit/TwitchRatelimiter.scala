@@ -84,21 +84,18 @@ class TwitchRatelimiter(val mewna: Mewna) {
               callback(headers, body)
             case "lookup" =>
               mewna.redis(redis => {
-                var res: JSONObject = null
-                var outerHeaders: Map[String, List[String]] = null
                 if(redis.exists(USER_CACHE_FORMAT.format(userId))) {
-                  res = new JSONObject(redis.get(USER_CACHE_FORMAT.format(userId)))
+                  var res = new JSONObject(redis.get(USER_CACHE_FORMAT.format(userId)))
+                  var outerHeaders: Map[String, List[String]] = null
+                  callback(outerHeaders, res)
                 } else {
                   val (headers, body) = mewna.twitchWebhookClient.getUserById(userId)
                   handleRatelimitHeaders(headers)
-                  outerHeaders = headers
-                  res = body
-                  logger.info("Fetched user: {}", res)
-                  redis.set(USER_CACHE_FORMAT.format(userId), res.toString())
                   // Expire cache after a day
+                  redis.set(USER_CACHE_FORMAT.format(userId), body.toString())
                   redis.expire(USER_CACHE_FORMAT.format(userId), 86400)
+                  callback(headers, body)
                 }
-                callback(outerHeaders, res)
               })
           }
         }
