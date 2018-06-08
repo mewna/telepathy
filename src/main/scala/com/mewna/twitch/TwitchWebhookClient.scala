@@ -105,7 +105,7 @@ final class TwitchWebhookClient(val mewna: Mewna) {
     (headers, if(body.length == 0) {
       new JSONObject()
     } else {
-      new JSONObject(body)
+      new JSONObject(body).getJSONArray("data").get(0).asInstanceOf[JSONObject]
     })
   }
 }
