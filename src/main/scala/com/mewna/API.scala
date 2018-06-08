@@ -69,6 +69,10 @@ class API(val mewna: Mewna) {
   
   def startServer(portNum: Int): Unit = {
     port(portNum)
+    before("/*", (req, res) => {
+      logger.info("Request: " + new JSONObject(req))
+      ""
+    })
     get("/", (_, _) => "memes")
     path("/api", () => {
       path("/v1", () => {
