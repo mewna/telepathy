@@ -82,34 +82,10 @@ class API(val mewna: Mewna) {
             handleStreamUpDown(req)
             new JSONObject()
           })
-          
-          // Handle Twitch being retarded
-          post("/follows", "null", (req, _) => {
-            handleFollows(req)
-            new JSONObject()
-          })
-          post("/streams", "null", (req, _) => {
-            handleStreamUpDown(req)
-            new JSONObject()
-          })
-          
-          post("/follows", "*/*", (req, _) => {
-            handleFollows(req)
-            new JSONObject()
-          })
-          post("/streams", "*/*", (req, _) => {
-            handleStreamUpDown(req)
-            new JSONObject()
-          })
-          
-          post("/follows", "*", (req, _) => {
-            handleFollows(req)
-            new JSONObject()
-          })
-          post("/streams", "*", (req, _) => {
-            handleStreamUpDown(req)
-            new JSONObject()
-          })
+  
+          // Spark is retarded and won't show any of this for reasons that are beyond me
+          get("/follows", (req, _) => req.queryParams("hub.challenge"))
+          get("/streams", (req, _) => req.queryParams("hub.challenge"))
         })
       })
     })
