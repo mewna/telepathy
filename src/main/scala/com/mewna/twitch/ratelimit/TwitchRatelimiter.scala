@@ -63,16 +63,8 @@ class TwitchRatelimiter(val mewna: Mewna) {
           if(ratelimitRemaining < 5) {
             logger.warn("Hit ratelimit ({} remaining), waiting until it expires...", ratelimitRemaining)
             // Sleep until we're ready
-            // If we can't get data for w/e reason, wait a minute
-            var timeSeconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() + 60000)
-            mewna.redis(redis => {
-              val string = redis.hget(HASH_KEY, HASH_RATELIMIT_RESET_TIME)
-              if(string.isDefined) {
-                timeSeconds = string.get.toInt
-              }
-            })
             try {
-              Thread.sleep(TimeUnit.SECONDS.toMillis(timeSeconds + 1000 - TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis())))
+              Thread.sleep(60000L)
               logger.info("Finished waiting!")
             } catch {
               case e: InterruptedException => e.printStackTrace()
