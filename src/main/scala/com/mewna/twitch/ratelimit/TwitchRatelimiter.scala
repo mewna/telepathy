@@ -61,7 +61,7 @@ class TwitchRatelimiter(val mewna: Mewna) {
           })
           // Just play it safe
           if(ratelimitRemaining < 5) {
-            logger.warn("Hit ratelimit ({} remaining), waiting until it expires...")
+            logger.warn("Hit ratelimit ({} remaining), waiting until it expires...", ratelimitRemaining)
             // Sleep until we're ready
             // If we can't get data for w/e reason, wait a minute
             var timeSeconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() + 60000)
