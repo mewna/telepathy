@@ -10,4 +10,4 @@ RUN apk update && apk add nginx
 RUN mkdir -pv /etc/nginx/conf.d
 COPY ./telepathy.conf /etc/nginx/conf.d/telepathy.conf
 
-ENTRYPOINT ["sh", "entrypoint.sh"]
+ENTRYPOINT ["sh", "/app/entrypoint.sh"]
