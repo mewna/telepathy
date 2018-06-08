@@ -92,6 +92,15 @@ class API(val mewna: Mewna) {
             handleStreamUpDown(req)
             ""
           })
+          post("/follows", null, (req, _) => {
+            handleFollows(req)
+            ""
+          })
+          post("/streams", null, (req, _) => {
+            // TODO
+            handleStreamUpDown(req)
+            ""
+          })
         })
       })
     })
