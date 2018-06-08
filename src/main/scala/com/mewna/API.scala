@@ -30,16 +30,18 @@ class API(val mewna: Mewna) {
              * }
              */
             // TODO
-            val json = new JSONObject(req.body())
-            mewna.twitchRatelimiter.queueLookupUser(json.getJSONArray("data").get(0).asInstanceOf[JSONObject].getString("from_id"),
-              (_, fromBody) => {
-                mewna.twitchRatelimiter.queueLookupUser(json.getJSONArray("data").get(0).asInstanceOf[JSONObject].getString("to_id"),
-                  (_, toBody) => {
-                    logger.info("Got webhook data: /follows => {}", json.toString(2))
-                    logger.info("        fromData: /follows => {}", new JSONObject(fromBody).toString(2))
-                    logger.info("          toData: /follows => {}", new JSONObject(toBody).toString(2))
-                  })
-              })
+            if(req.body().length > 0) {
+              val json = new JSONObject(req.body())
+              mewna.twitchRatelimiter.queueLookupUser(json.getJSONArray("data").get(0).asInstanceOf[JSONObject].getString("from_id"),
+                (_, fromBody) => {
+                  mewna.twitchRatelimiter.queueLookupUser(json.getJSONArray("data").get(0).asInstanceOf[JSONObject].getString("to_id"),
+                    (_, toBody) => {
+                      logger.info("Got webhook data: /follows => {}", json.toString(2))
+                      logger.info("        fromData: /follows => {}", new JSONObject(fromBody).toString(2))
+                      logger.info("          toData: /follows => {}", new JSONObject(toBody).toString(2))
+                    })
+                })
+            }
             ""
           })
           post("/streams", (req, _) => {
@@ -64,12 +66,14 @@ class API(val mewna: Mewna) {
              * }
              */
             // TODO
-            val json = new JSONObject(req.body())
-            mewna.twitchRatelimiter.queueLookupUser(json.getJSONArray("data").get(0).asInstanceOf[JSONObject].getString("user_id"),
-              (_, streamer) => {
-                logger.info("Got webhook data: /streams => {}", json.toString(2))
-                logger.info("        streamer: /streams => {}", new JSONObject(streamer).toString(2))
-              })
+            if(req.body().length > 0) {
+              val json = new JSONObject(req.body())
+              mewna.twitchRatelimiter.queueLookupUser(json.getJSONArray("data").get(0).asInstanceOf[JSONObject].getString("user_id"),
+                (_, streamer) => {
+                  logger.info("Got webhook data: /streams => {}", json.toString(2))
+                  logger.info("        streamer: /streams => {}", new JSONObject(streamer).toString(2))
+                })
+            }
             ""
           })
         })
