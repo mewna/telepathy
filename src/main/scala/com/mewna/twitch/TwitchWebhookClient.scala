@@ -35,7 +35,38 @@ final class TwitchWebhookClient(val mewna: Mewna) {
   private val WEBHOOK_STORE = "telepathy:webhook:store"
   val logger: Logger = LoggerFactory.getLogger(getClass)
   
-  // TODO: Start webhook refresher here
+  def startHookRefresher(): Unit = {
+    mewna.threadPool.execute(() => {
+      while(true) {
+        // Check for soon-to-die hooks
+        mewna.redis(redis => {
+          val hookMap = redis.hgetall1(WEBHOOK_STORE)
+          if(hookMap.isDefined) {
+            val map = hookMap.get
+            map.toSeq.map(x => (x._1, x._2.toInt)).filter(x => System.currentTimeMillis() - x._2 <= 86400000).foreach(x => {
+              val (idMode, _) = x
+              val strings = idMode.split(":")
+              val id = strings(0)
+              val mode = strings(1)
+              val topic = mode match {
+                case "follows" => TwitchWebhookClient.TOPIC_FOLLOWS
+                case "streams" => TwitchWebhookClient.TOPIC_STREAM_UP_DOWN
+              }
+              mewna.twitchRatelimiter.queueSubscribe(topic, id, (_, _) => {
+                logger.info("Resubscribed to {} notifications for {}", mode: Any, id: Any)
+              })
+            })
+          }
+        })
+        // Wait a bit and start over
+        try {
+          Thread.sleep(300000)
+        } catch {
+          case e: InterruptedException => logger.warn("{}", e)
+        }
+      }
+    })
+  }
   
   def subscribe(topic: String, userId: String, leaseSeconds: Int = 0, cache: Boolean = true): (Map[String, List[String]], JSONObject) = {
     updateHook("subscribe", topic, userId, leaseSeconds, cache)
@@ -49,6 +80,10 @@ final class TwitchWebhookClient(val mewna: Mewna) {
     val callback = topic match {
       case TwitchWebhookClient.TOPIC_FOLLOWS => System.getenv("DOMAIN") + "/api/v1/twitch/follows"
       case TwitchWebhookClient.TOPIC_STREAM_UP_DOWN => System.getenv("DOMAIN") + "/api/v1/twitch/streams"
+    }
+    val mode = topic match {
+      case TwitchWebhookClient.TOPIC_FOLLOWS => "follows"
+      case TwitchWebhookClient.TOPIC_STREAM_UP_DOWN => "streams"
     }
     val data = new JSONObject()
       .put("hub.callback", callback)
@@ -66,17 +101,17 @@ final class TwitchWebhookClient(val mewna: Mewna) {
     logger.debug("Request headers: {}", headers)
     logger.debug("   Request body: {}", body)
     
-    // If the hook is for more than a day, cache it so that
+    // If the hook is for more than a day, cache it so that we can refresh it
     if(leaseSeconds > 86400) {
       mode match {
         case "subscribe" =>
           mewna.redis(redis => {
             // Set it to be one day before the lease expires, so that the refresher can catch it
-            redis.hset(WEBHOOK_STORE, userId, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(leaseSeconds - 86400))
+            redis.hset(WEBHOOK_STORE, userId + ":" + mode, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(leaseSeconds - 86400))
           })
         case "unsubscribe" =>
           mewna.redis(redis => {
-            redis.hdel(WEBHOOK_STORE, userId)
+            redis.hdel(WEBHOOK_STORE, userId + ":" + mode)
           })
       }
     }
