@@ -3,6 +3,7 @@ package com.mewna.nats
 import java.io.IOException
 
 import com.mewna.Mewna
+import com.mewna.twitch.TwitchWebhookClient
 import io.nats.client.Nats
 import io.nats.streaming.{Message, StreamingConnection, StreamingConnectionFactory, SubscriptionOptions}
 import org.json.JSONObject
@@ -44,12 +45,24 @@ class NatsServer(val mewna: Mewna) {
             mewna.threadPool.execute(() => {
               // TODO: Un/subscribe
               o.getString("t") match {
-                case "TWITCH_SUBSCRIBE" => {
-                
-                }
-                case "TWITCH_UNSUBSCRIBE" => {
-                
-                }
+                case "TWITCH_SUBSCRIBE" =>
+                  val id = data.getString("id")
+                  val topic = data.getString("topic") match {
+                    case "streams" => TwitchWebhookClient.TOPIC_STREAM_UP_DOWN
+                    case "follows" => TwitchWebhookClient.TOPIC_FOLLOWS
+                  }
+                  mewna.twitchRatelimiter.queueSubscribe(topic, id, (_, _) => {
+                    logger.info("Subscribed to id {} " + topic, id)
+                  })
+                case "TWITCH_UNSUBSCRIBE" =>
+                  val id = data.getString("id")
+                  val topic = data.getString("topic") match {
+                    case "streams" => TwitchWebhookClient.TOPIC_STREAM_UP_DOWN
+                    case "follows" => TwitchWebhookClient.TOPIC_FOLLOWS
+                  }
+                  mewna.twitchRatelimiter.queueUnsubscribe(topic, id, (_, _) => {
+                    logger.info("Unsubscribed from id {} " + topic, id)
+                  })
               }
             })
           } catch {
