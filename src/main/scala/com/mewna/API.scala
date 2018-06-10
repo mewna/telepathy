@@ -1,6 +1,7 @@
 package com.mewna
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import java.util.concurrent.Future
+
 import org.json.JSONObject
 import org.slf4j.{Logger, LoggerFactory}
 import spark.Request
@@ -82,10 +83,16 @@ class API(val mewna: Mewna) {
             handleStreamUpDown(req)
             new JSONObject()
           })
-  
+          
           // Spark is retarded and won't show any of this for reasons that are beyond me
           get("/follows", (req, _) => req.queryParams("hub.challenge"))
           get("/streams", (req, _) => req.queryParams("hub.challenge"))
+          
+          get("/lookup/:name", (req, res) => {
+            val future: Future[JSONObject] = mewna.twitchRatelimiter.queueFutureLookupUserName(req.params(":name"))
+            val data: JSONObject = future.get()
+            data
+          })
         })
       })
     })

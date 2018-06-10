@@ -81,13 +81,13 @@ final class TwitchWebhookClient(val mewna: Mewna) {
       case TwitchWebhookClient.TOPIC_FOLLOWS => System.getenv("DOMAIN") + "/api/v1/twitch/follows"
       case TwitchWebhookClient.TOPIC_STREAM_UP_DOWN => System.getenv("DOMAIN") + "/api/v1/twitch/streams"
     }
-    val mode = topic match {
+    val hookMode = topic match {
       case TwitchWebhookClient.TOPIC_FOLLOWS => "follows"
       case TwitchWebhookClient.TOPIC_STREAM_UP_DOWN => "streams"
     }
     val data = new JSONObject()
       .put("hub.callback", callback)
-      .put("hub.mode", mode)
+      .put("hub.mode", hookMode)
       .put("hub.topic", topic.format(userId))
       .put("hub.lease_seconds", leaseSeconds)
       .put("hub.secret", "") // TODO
@@ -132,6 +132,20 @@ final class TwitchWebhookClient(val mewna: Mewna) {
   
   def getUserById(id: String): (Map[String, List[String]], JSONObject) = {
     val res = client.newCall(new Request.Builder().url(TwitchWebhookClient.GET_USERS + "?id=" + id)
+      .get()
+      .header("Authorization", "Bearer " + System.getenv("TWITCH_OAUTH").replace("oauth:", ""))
+      .build()).execute()
+    val body = res.body().string()
+    val headers: Map[String, List[String]] = res.headers().toMultimap.asScala.mapValues(_.asScala.toList).toMap
+    (headers, if(body.length == 0) {
+      new JSONObject()
+    } else {
+      new JSONObject(body).getJSONArray("data").get(0).asInstanceOf[JSONObject]
+    })
+  }
+  
+  def getUserByName(name: String): (Map[String, List[String]], JSONObject) = {
+    val res = client.newCall(new Request.Builder().url(TwitchWebhookClient.GET_USERS + "?login=" + name)
       .get()
       .header("Authorization", "Bearer " + System.getenv("TWITCH_OAUTH").replace("oauth:", ""))
       .build()).execute()
