@@ -34,11 +34,11 @@ class TwitchRatelimiter(val mewna: Mewna) {
   }
   
   def queueLookupUser(userId: String, callback: (Map[String, List[String]], JSONObject) => Unit = (_, _) => {}): Unit = {
-    queue += (("lookup", null, userId, callback))
+    queue += (("lookup", "", userId, callback))
   }
   
   def queueLookupUserName(userId: String, callback: (Map[String, List[String]], JSONObject) => Unit = (_, _) => {}): Unit = {
-    queue += (("lookup:name", null, userId, callback))
+    queue += (("lookup:name", "", userId, callback))
   }
   
   def queueFutureLookupUserName(name: String): Future[JSONObject] = {
