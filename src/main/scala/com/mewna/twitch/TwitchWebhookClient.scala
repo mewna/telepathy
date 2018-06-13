@@ -151,10 +151,13 @@ final class TwitchWebhookClient(val mewna: Mewna) {
       .build()).execute()
     val body = res.body().string()
     val headers: Map[String, List[String]] = res.headers().toMultimap.asScala.mapValues(_.asScala.toList).toMap
-    (headers, if(body.length == 0) {
+    val nObject = new JSONObject(body)
+    nObject
+    println(body)
+    (headers, if(body.length == 0 || !nObject.has("data") || nObject.getJSONArray("data").length() == 0) {
       new JSONObject()
     } else {
-      new JSONObject(body).getJSONArray("data").get(0).asInstanceOf[JSONObject]
+      nObject.getJSONArray("data").get(0).asInstanceOf[JSONObject]
     })
   }
 }
