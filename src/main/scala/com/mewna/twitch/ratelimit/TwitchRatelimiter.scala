@@ -59,6 +59,20 @@ class TwitchRatelimiter(val mewna: Mewna) {
     })
   }
   
+  def queueFutureLookupUserId(name: String): Future[JSONObject] = {
+    mewna.threadPool.submit(() => {
+      var (headers, data): (Map[String, List[String]], JSONObject) = (Map(), new JSONObject())
+      queueLookupUser(name, (_headers, _data) => {
+        headers = _headers
+        data = _data
+      })
+      while(data.toString.equals("{}")) {
+        Thread.sleep(50L)
+      }
+      data
+    })
+  }
+  
   def queueFutureLookupUserName(name: String): Future[JSONObject] = {
     mewna.threadPool.submit(() => {
       var (headers, data): (Map[String, List[String]], JSONObject) = (Map(), new JSONObject())

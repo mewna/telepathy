@@ -31,6 +31,7 @@ class API(val mewna: Mewna) {
       (_, fromBody) => {
         mewna.twitchRatelimiter.queueLookupUser(json.getJSONArray("data").get(0).asInstanceOf[JSONObject].getString("to_id"),
           (_, toBody) => {
+            // TODO: Emit events
             logger.info("Got webhook data: /follows => {}", json.toString(2))
             logger.info("        fromData: /follows => {}", fromBody.toString(2))
             logger.info("          toData: /follows => {}", toBody.toString(2))
@@ -63,6 +64,7 @@ class API(val mewna: Mewna) {
       val json = new JSONObject(req.body())
       mewna.twitchRatelimiter.queueLookupUser(json.getJSONArray("data").get(0).asInstanceOf[JSONObject].getString("user_id"),
         (_, streamer) => {
+          // TODO: Emit events
           logger.info("Got webhook data: /streams => {}", json.toString(2))
           logger.info("        streamer: /streams => {}", streamer.toString(2))
         })
@@ -88,8 +90,14 @@ class API(val mewna: Mewna) {
           get("/follows", (req, _) => req.queryParams("hub.challenge"))
           get("/streams", (req, _) => req.queryParams("hub.challenge"))
           
-          get("/lookup/:name", (req, res) => {
+          get("/lookup/name/:name", (req, _) => {
             val future: Future[JSONObject] = mewna.twitchRatelimiter.queueFutureLookupUserName(req.params(":name"))
+            val data: JSONObject = future.get()
+            data
+          })
+          
+          get("/lookup/id/:id", (req, _) => {
+            val future: Future[JSONObject] = mewna.twitchRatelimiter.queueFutureLookupUserId(req.params(":id"))
             val data: JSONObject = future.get()
             data
           })
