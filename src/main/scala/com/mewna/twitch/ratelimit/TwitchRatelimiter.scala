@@ -90,73 +90,77 @@ class TwitchRatelimiter(val mewna: Mewna) {
   def startPollingQueue(): Unit = {
     mewna.threadPool.execute(() => {
       while(true) {
-        if(queue.isEmpty) {
-          // If we have nothing in the queue, wait a bit and check again
-          try {
-            Thread.sleep(50L)
-          } catch {
-            case e: InterruptedException => e.printStackTrace()
-          }
-        } else {
-          // Check if we can
-          var ratelimitRemaining = 0
-          mewna.redis(redis => {
-            val string = redis.hget(HASH_KEY, HASH_RATELIMIT_REMAINING)
-            if(string.isEmpty) {
-              // We have no ratelimit data, so go
-              ratelimitRemaining = 120
-            } else {
-              // Obey the ratelimits
-              ratelimitRemaining = string.get.toInt
-            }
-          })
-          // Just play it safe
-          if(ratelimitRemaining < 5) {
-            logger.warn("Hit ratelimit ({} remaining), waiting until it expires...", ratelimitRemaining)
-            // Sleep until we're ready
+        try {
+          if(queue.isEmpty) {
+            // If we have nothing in the queue, wait a bit and check again
             try {
-              Thread.sleep(60000L)
-              mewna.redis(redis => redis.hset(HASH_KEY, HASH_RATELIMIT_REMAINING, 120))
-              logger.info("Finished waiting!")
+              Thread.sleep(50L)
             } catch {
               case e: InterruptedException => e.printStackTrace()
             }
-          }
-          // pop the next thing off the queue and go
-          val (mode, topic, userId, callback) = queue.dequeue()
-          mode match {
-            case "subscribe" =>
-              val (headers, body) = mewna.twitchWebhookClient.subscribe(topic, userId, leaseSeconds = 864000)
-              handleRatelimitHeaders(headers)
-              callback(headers, body)
-            case "unsubscribe" =>
-              val (headers, body) = mewna.twitchWebhookClient.subscribe(topic, userId, leaseSeconds = 864000)
-              handleRatelimitHeaders(headers)
-              callback(headers, body)
-            case "lookup" =>
-              mewna.redis(redis => {
-                val (headers, body) = mewna.twitchWebhookClient.getUserById(userId)
+          } else {
+            // Check if we can
+            var ratelimitRemaining = 0
+            mewna.redis(redis => {
+              val string = redis.hget(HASH_KEY, HASH_RATELIMIT_REMAINING)
+              if(string.isEmpty) {
+                // We have no ratelimit data, so go
+                ratelimitRemaining = 120
+              } else {
+                // Obey the ratelimits
+                ratelimitRemaining = string.get.toInt
+              }
+            })
+            // Just play it safe
+            if(ratelimitRemaining < 5) {
+              logger.warn("Hit ratelimit ({} remaining), waiting until it expires...", ratelimitRemaining)
+              // Sleep until we're ready
+              try {
+                Thread.sleep(60000L)
+                mewna.redis(redis => redis.hset(HASH_KEY, HASH_RATELIMIT_REMAINING, 120))
+                logger.info("Finished waiting!")
+              } catch {
+                case e: InterruptedException => e.printStackTrace()
+              }
+            }
+            // pop the next thing off the queue and go
+            val (mode, topic, userId, callback) = queue.dequeue()
+            mode match {
+              case "subscribe" =>
+                val (headers, body) = mewna.twitchWebhookClient.subscribe(topic, userId, leaseSeconds = 864000)
                 handleRatelimitHeaders(headers)
-                // Expire cache after a day
-                redis.set(USER_ID_CACHE_FORMAT.format(userId), body.toString())
-                redis.expire(USER_ID_CACHE_FORMAT.format(userId), 86400)
                 callback(headers, body)
-              })
-            case "lookup:name" =>
-              mewna.redis(redis => {
-                val (headers, body) = mewna.twitchWebhookClient.getUserByName(userId)
+              case "unsubscribe" =>
+                val (headers, body) = mewna.twitchWebhookClient.subscribe(topic, userId, leaseSeconds = 864000)
                 handleRatelimitHeaders(headers)
-                if(body.toString().equals("{}") || (body.has("status") && body.getInt("status") == 400)) {
-                  // :fire: :blobcatfireeyes:
-                  callback(null: Map[String, List[String]], new JSONObject().put("status", "400"))
-                } else {
+                callback(headers, body)
+              case "lookup" =>
+                mewna.redis(redis => {
+                  val (headers, body) = mewna.twitchWebhookClient.getUserById(userId)
+                  handleRatelimitHeaders(headers)
                   // Expire cache after a day
-                  redis.set(USER_NAME_CACHE_FORMAT.format(userId), body.toString())
-                  redis.expire(USER_NAME_CACHE_FORMAT.format(userId), 86400)
+                  redis.set(USER_ID_CACHE_FORMAT.format(userId), body.toString())
+                  redis.expire(USER_ID_CACHE_FORMAT.format(userId), 86400)
                   callback(headers, body)
-                }
-              })
+                })
+              case "lookup:name" =>
+                mewna.redis(redis => {
+                  val (headers, body) = mewna.twitchWebhookClient.getUserByName(userId)
+                  handleRatelimitHeaders(headers)
+                  if(body.toString().equals("{}") || (body.has("status") && body.getInt("status") == 400)) {
+                    // :fire: :blobcatfireeyes:
+                    callback(null: Map[String, List[String]], new JSONObject().put("status", "400"))
+                  } else {
+                    // Expire cache after a day
+                    redis.set(USER_NAME_CACHE_FORMAT.format(userId), body.toString())
+                    redis.expire(USER_NAME_CACHE_FORMAT.format(userId), 86400)
+                    callback(headers, body)
+                  }
+                })
+            }
           }
+        } catch {
+          case e: Exception => e.printStackTrace()
         }
       }
     })

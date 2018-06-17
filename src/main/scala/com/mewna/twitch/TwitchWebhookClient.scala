@@ -38,31 +38,35 @@ final class TwitchWebhookClient(val mewna: Mewna) {
   def startHookRefresher(): Unit = {
     mewna.threadPool.execute(() => {
       while(true) {
-        // Check for soon-to-die hooks
-        mewna.redis(redis => {
-          val hookMap = redis.hgetall1(WEBHOOK_STORE)
-          if(hookMap.isDefined) {
-            val map = hookMap.get
-            map.toSeq.map(x => (x._1, x._2.toInt)).filter(x => System.currentTimeMillis() - x._2 <= 86400000).foreach(x => {
-              val (idMode, _) = x
-              val strings = idMode.split(":")
-              val id = strings(0)
-              val mode = strings(1)
-              val topic = mode match {
-                case "follows" => TwitchWebhookClient.TOPIC_FOLLOWS
-                case "streams" => TwitchWebhookClient.TOPIC_STREAM_UP_DOWN
-              }
-              mewna.twitchRatelimiter.queueSubscribe(topic, id, (_, _) => {
-                logger.info("Resubscribed to {} notifications for {}", mode: Any, id: Any)
-              })
-            })
-          }
-        })
-        // Wait a bit and start over
         try {
-          Thread.sleep(300000)
+          // Check for soon-to-die hooks
+          mewna.redis(redis => {
+            val hookMap = redis.hgetall1(WEBHOOK_STORE)
+            if(hookMap.isDefined) {
+              val map = hookMap.get
+              map.toSeq.map(x => (x._1, x._2.toInt)).filter(x => System.currentTimeMillis() - x._2 <= 86400000).foreach(x => {
+                val (idMode, _) = x
+                val strings = idMode.split(":")
+                val id = strings(0)
+                val mode = strings(1)
+                val topic = mode match {
+                  case "follows" => TwitchWebhookClient.TOPIC_FOLLOWS
+                  case "streams" => TwitchWebhookClient.TOPIC_STREAM_UP_DOWN
+                }
+                mewna.twitchRatelimiter.queueSubscribe(topic, id, (_, _) => {
+                  logger.info("Resubscribed to {} notifications for {}", mode: Any, id: Any)
+                })
+              })
+            }
+          })
+          // Wait a bit and start over
+          try {
+            Thread.sleep(300000)
+          } catch {
+            case e: InterruptedException => logger.warn("{}", e)
+          }
         } catch {
-          case e: InterruptedException => logger.warn("{}", e)
+          case e: Exception => e.printStackTrace()
         }
       }
     })
