@@ -29,7 +29,7 @@ class Mewna {
   val twitchRatelimiter: TwitchRatelimiter = new TwitchRatelimiter(this)
   private val redisPool: RedisClientPool = new RedisClientPool(System.getenv("REDIS_HOST"), 6379,
     secret = Option[String](System.getenv("REDIS_PASS")))
-  private val nats: NatsServer = new NatsServer(this)
+  val nats: NatsServer = new NatsServer(this)
   
   private def run(): Unit = {
     // NOTE: For now we only care about Twitch

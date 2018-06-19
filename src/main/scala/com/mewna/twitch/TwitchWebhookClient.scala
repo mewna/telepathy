@@ -82,8 +82,8 @@ final class TwitchWebhookClient(val mewna: Mewna) {
   
   def updateHook(mode: String, topic: String, userId: String, leaseSeconds: Int = 0, cache: Boolean = true): (Map[String, List[String]], JSONObject) = {
     val callback = topic match {
-      case TwitchWebhookClient.TOPIC_FOLLOWS => System.getenv("DOMAIN") + "/api/v1/twitch/follows"
-      case TwitchWebhookClient.TOPIC_STREAM_UP_DOWN => System.getenv("DOMAIN") + "/api/v1/twitch/streams"
+      case TwitchWebhookClient.TOPIC_FOLLOWS => System.getenv("DOMAIN") + "/api/v1/twitch/follows/" + userId
+      case TwitchWebhookClient.TOPIC_STREAM_UP_DOWN => System.getenv("DOMAIN") + "/api/v1/twitch/streams/" + userId
     }
     val hookMode = topic match {
       case TwitchWebhookClient.TOPIC_FOLLOWS => "follows"

@@ -92,7 +92,9 @@ class NatsServer(val mewna: Mewna) {
   private def pushEvent[T](queue: String, kind: String, data: T): Unit = {
     val event: JSONObject = new JSONObject().put("t", kind).put("ts", System.currentTimeMillis()).put("d", data)
     try {
-      connection.publish(queue, event.toString().getBytes)
+      if(System.getenv("NATS_URL") != null && connection != null) {
+        connection.publish(queue, event.toString().getBytes)
+      }
     } catch {
       // Bind this pattern to variable e
       case e@(_: IOException | _: InterruptedException) => e.printStackTrace()

@@ -27,6 +27,7 @@ class API(val mewna: Mewna) {
    */
   private def handleFollows(req: Request): Unit = {
     val json = new JSONObject(req.body())
+    // TODO: Sometimes this has no [0]?
     mewna.twitchRatelimiter.queueLookupUser(json.getJSONArray("data").get(0).asInstanceOf[JSONObject].getString("from_id"),
       (_, fromBody) => {
         mewna.twitchRatelimiter.queueLookupUser(json.getJSONArray("data").get(0).asInstanceOf[JSONObject].getString("to_id"),
@@ -35,6 +36,9 @@ class API(val mewna: Mewna) {
             logger.info("Got webhook data: /follows => {}", json.toString(2))
             logger.info("        fromData: /follows => {}", fromBody.toString(2))
             logger.info("          toData: /follows => {}", toBody.toString(2))
+            // Construct the follow event
+            val event: JSONObject = new JSONObject().put("from", fromBody).put("to", toBody)
+            mewna.nats.pushBackendEvent("TWITCH_FOLLOWER", event)
           })
       })
   }
@@ -42,6 +46,7 @@ class API(val mewna: Mewna) {
   /*
    * Example payload:
    *
+   * Stream up:
    * {
    *   "data": [
    *     {
@@ -58,16 +63,37 @@ class API(val mewna: Mewna) {
    *     }
    *   ]
    * }
+   *
+   * Stream down:
+   * {
+   *   "data": []
+   * }
    */
   private def handleStreamUpDown(req: Request): Unit = {
     if(req.body().length > 0) {
       val json = new JSONObject(req.body())
-      mewna.twitchRatelimiter.queueLookupUser(json.getJSONArray("data").get(0).asInstanceOf[JSONObject].getString("user_id"),
-        (_, streamer) => {
-          // TODO: Emit events
-          logger.info("Got webhook data: /streams => {}", json.toString(2))
-          logger.info("        streamer: /streams => {}", streamer.toString(2))
-        })
+      val dataArray = json.getJSONArray("data")
+      if(dataArray.length() > 0) {
+        // Stream start
+        mewna.twitchRatelimiter.queueLookupUser(dataArray.get(0).asInstanceOf[JSONObject].getString("user_id"),
+          (_, streamer) => {
+            // TODO: Emit events
+            val streamData = new JSONObject().put("streamData", dataArray.get(0).asInstanceOf[JSONObject]).put("streamer", streamer)
+            mewna.nats.pushBackendEvent("TWITCH_STREAM_START", streamData)
+            logger.info("Got webhook data: /streams => {}", json.toString(2))
+            logger.info("        streamer: /streams => {}", streamer.toString(2))
+          })
+      } else {
+        // Stream end
+        mewna.twitchRatelimiter.queueLookupUser(req.params(":id"),
+          (_, streamer) => {
+            // TODO: Emit events
+            val streamData = new JSONObject().put("streamer", streamer)
+            mewna.nats.pushBackendEvent("TWITCH_STREAM_END", streamData)
+            logger.info("Got webhook data: /streams => {}", json.toString(2))
+            logger.info("        streamer: /streams => {}", streamer.toString(2))
+          })
+      }
     }
   }
   
@@ -77,18 +103,17 @@ class API(val mewna: Mewna) {
     path("/api", () => {
       path("/v1", () => {
         path("/twitch", () => {
-          post("/follows", (req, _) => {
+          post("/follows/:id", (req, _) => {
             handleFollows(req)
             new JSONObject()
           })
-          post("/streams", (req, _) => {
+          post("/streams/:id", (req, _) => {
             handleStreamUpDown(req)
             new JSONObject()
           })
           
-          // Spark is retarded and won't show any of this for reasons that are beyond me
-          get("/follows", (req, _) => req.queryParams("hub.challenge"))
-          get("/streams", (req, _) => req.queryParams("hub.challenge"))
+          get("/follows/:id", (req, _) => req.queryParams("hub.challenge"))
+          get("/streams/:id", (req, _) => req.queryParams("hub.challenge"))
           
           get("/lookup/name/:name", (req, _) => {
             val future: Future[JSONObject] = mewna.twitchRatelimiter.queueFutureLookupUserName(req.params(":name"))
