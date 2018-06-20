@@ -32,9 +32,6 @@ class API(val mewna: Mewna) {
       (_, fromBody) => {
         mewna.twitchRatelimiter.queueLookupUser(json.getJSONArray("data").get(0).asInstanceOf[JSONObject].getString("to_id"),
           (_, toBody) => {
-            logger.info("Got webhook data: /follows => {}", json.toString(2))
-            logger.info("        fromData: /follows => {}", fromBody.toString(2))
-            logger.info("          toData: /follows => {}", toBody.toString(2))
             // Construct the follow event
             val event: JSONObject = new JSONObject().put("from", fromBody).put("to", toBody)
             mewna.nats.pushBackendEvent("TWITCH_FOLLOWER", event)
