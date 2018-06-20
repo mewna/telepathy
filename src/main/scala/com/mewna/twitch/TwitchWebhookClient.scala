@@ -91,7 +91,7 @@ final class TwitchWebhookClient(val mewna: Mewna) {
     }
     val data = new JSONObject()
       .put("hub.callback", callback)
-      .put("hub.mode", hookMode)
+      .put("hub.mode", mode)
       .put("hub.topic", topic.format(userId))
       .put("hub.lease_seconds", leaseSeconds)
       .put("hub.secret", "") // TODO
