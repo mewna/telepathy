@@ -28,19 +28,25 @@ class API(val mewna: Mewna) {
   private def handleFollows(req: Request): Unit = {
     val json = new JSONObject(req.body())
     // TODO: Sometimes this has no [0]?
-    mewna.twitchRatelimiter.queueLookupUser(json.getJSONArray("data").get(0).asInstanceOf[JSONObject].getString("from_id"),
-      (_, fromBody) => {
-        mewna.twitchRatelimiter.queueLookupUser(json.getJSONArray("data").get(0).asInstanceOf[JSONObject].getString("to_id"),
-          (_, toBody) => {
-            // Construct the follow event
-            val event: JSONObject = new JSONObject().put("from", fromBody).put("to", toBody)
-            mewna.nats.pushBackendEvent("TWITCH_FOLLOWER", event)
-            logger.info("TWITCH_FOLLOWER - {} ({}) -> {} ({})",
-              Array(fromBody.getString("login"), fromBody.getString("id"),
-                toBody.getString("login"), toBody.getString("id")): _*
-            )
+    val jsonArray = json.getJSONArray("data")
+    if(jsonArray != null) {
+      if(jsonArray.length() > 0) {
+        val payload = jsonArray.get(0).asInstanceOf[JSONObject]
+        mewna.twitchRatelimiter.queueLookupUser(payload.getString("from_id"),
+          (_, fromBody) => {
+            mewna.twitchRatelimiter.queueLookupUser(payload.getString("to_id"),
+              (_, toBody) => {
+                // Construct the follow event
+                val event: JSONObject = new JSONObject().put("from", fromBody).put("to", toBody)
+                mewna.nats.pushBackendEvent("TWITCH_FOLLOWER", event)
+                logger.info("TWITCH_FOLLOWER - {} ({}) -> {} ({})",
+                  Array(fromBody.getString("login"), fromBody.getString("id"),
+                    toBody.getString("login"), toBody.getString("id")): _*
+                )
+              })
           })
-      })
+      }
+    }
   }
   
   /*
