@@ -32,13 +32,15 @@ class API(val mewna: Mewna) {
       (_, fromBody) => {
         mewna.twitchRatelimiter.queueLookupUser(json.getJSONArray("data").get(0).asInstanceOf[JSONObject].getString("to_id"),
           (_, toBody) => {
-            // TODO: Emit events
             logger.info("Got webhook data: /follows => {}", json.toString(2))
             logger.info("        fromData: /follows => {}", fromBody.toString(2))
             logger.info("          toData: /follows => {}", toBody.toString(2))
             // Construct the follow event
             val event: JSONObject = new JSONObject().put("from", fromBody).put("to", toBody)
             mewna.nats.pushBackendEvent("TWITCH_FOLLOWER", event)
+            logger.info("TWITCH_FOLLOWER - {} ({}) -> {} ({})",
+              Array(fromBody.getString("login"), fromBody.getString("id"),
+                toBody.getString("login"), toBody.getString("id")): _*)
           })
       })
   }
@@ -77,21 +79,17 @@ class API(val mewna: Mewna) {
         // Stream start
         mewna.twitchRatelimiter.queueLookupUser(dataArray.get(0).asInstanceOf[JSONObject].getString("user_id"),
           (_, streamer) => {
-            // TODO: Emit events
             val streamData = new JSONObject().put("streamData", dataArray.get(0).asInstanceOf[JSONObject]).put("streamer", streamer)
             mewna.nats.pushBackendEvent("TWITCH_STREAM_START", streamData)
-            logger.info("Got webhook data: /streams => {}", json.toString(2))
-            logger.info("        streamer: /streams => {}", streamer.toString(2))
+            logger.info("TWITCH_STREAM_START for {} ({})", streamer.getString("login"): String, streamer.getString("id"): Any)
           })
       } else {
         // Stream end
         mewna.twitchRatelimiter.queueLookupUser(req.params(":id"),
           (_, streamer) => {
-            // TODO: Emit events
             val streamData = new JSONObject().put("streamer", streamer)
             mewna.nats.pushBackendEvent("TWITCH_STREAM_END", streamData)
-            logger.info("Got webhook data: /streams => {}", json.toString(2))
-            logger.info("        streamer: /streams => {}", streamer.toString(2))
+            logger.info("TWITCH_STREAM_END for {} ({})", streamer.getString("login"): String, streamer.getString("id"): Any)
           })
       }
     }
