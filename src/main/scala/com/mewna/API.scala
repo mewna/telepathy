@@ -38,10 +38,10 @@ class API(val mewna: Mewna) {
             // Construct the follow event
             val event: JSONObject = new JSONObject().put("from", fromBody).put("to", toBody)
             mewna.nats.pushBackendEvent("TWITCH_FOLLOWER", event)
-            println("TWITCH_FOLLOWER")
             logger.info("TWITCH_FOLLOWER - {} ({}) -> {} ({})",
               Array(fromBody.getString("login"), fromBody.getString("id"),
-                toBody.getString("login"), toBody.getString("id")): _*)
+                toBody.getString("login"), toBody.getString("id")): _*
+            )
           })
       })
   }
@@ -82,7 +82,6 @@ class API(val mewna: Mewna) {
           (_, streamer) => {
             val streamData = new JSONObject().put("streamData", dataArray.get(0).asInstanceOf[JSONObject]).put("streamer", streamer)
             mewna.nats.pushBackendEvent("TWITCH_STREAM_START", streamData)
-            println("TWITCH_STREAM_START")
             logger.info("TWITCH_STREAM_START for {} ({})", streamer.getString("login"): String, streamer.getString("id"): Any)
           })
       } else {
@@ -91,7 +90,6 @@ class API(val mewna: Mewna) {
           (_, streamer) => {
             val streamData = new JSONObject().put("streamer", streamer)
             mewna.nats.pushBackendEvent("TWITCH_STREAM_END", streamData)
-            println("TWITCH_STREAM_END")
             logger.info("TWITCH_STREAM_END for {} ({})", streamer.getString("login"): String, streamer.getString("id"): Any)
           })
       }

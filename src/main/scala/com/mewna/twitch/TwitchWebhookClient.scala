@@ -112,10 +112,12 @@ final class TwitchWebhookClient(val mewna: Mewna) {
           mewna.redis(redis => {
             // Set it to be one day before the lease expires, so that the refresher can catch it
             redis.hset(WEBHOOK_STORE, userId + ":" + mode, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(leaseSeconds - 86400))
+            logger.info("Subscribed to {}", topic.format(userId))
           })
         case "unsubscribe" =>
           mewna.redis(redis => {
             redis.hdel(WEBHOOK_STORE, userId + ":" + mode)
+            logger.info("Unsubscribed from {}", topic.format(userId))
           })
       }
     }
