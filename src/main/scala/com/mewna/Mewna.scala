@@ -40,7 +40,7 @@ class Mewna {
     logger.info("Connecting to NATS...")
     nats.connect()
     logger.info("Starting API server...")
-    api.startServer(4444)
+    api.startServer(80)
     logger.info("Starting Twitch queue polling...")
     twitchRatelimiter.startPollingQueue()
     val subscribes: String = System.getenv("subscribes")
