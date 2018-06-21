@@ -23,6 +23,10 @@ object TwitchWebhookClient {
    * {{{ TOPIC_STREAM_UP_DOWN.format(userId) }}}
    */
   val TOPIC_STREAM_UP_DOWN: String = "https://api.twitch.tv/helix/streams?user_id=%s"
+  
+  /**
+   * API route
+   */
   val GET_USERS = "https://api.twitch.tv/helix/users"
 }
 
@@ -84,10 +88,6 @@ final class TwitchWebhookClient(val mewna: Mewna) {
     val callback = topic match {
       case TwitchWebhookClient.TOPIC_FOLLOWS => System.getenv("DOMAIN") + "/api/v1/twitch/follows/" + userId
       case TwitchWebhookClient.TOPIC_STREAM_UP_DOWN => System.getenv("DOMAIN") + "/api/v1/twitch/streams/" + userId
-    }
-    val hookMode = topic match {
-      case TwitchWebhookClient.TOPIC_FOLLOWS => "follows"
-      case TwitchWebhookClient.TOPIC_STREAM_UP_DOWN => "streams"
     }
     val data = new JSONObject()
       .put("hub.callback", callback)
