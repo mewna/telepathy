@@ -112,7 +112,7 @@ class TwitchRatelimiter(val mewna: Mewna) {
               }
             })
             // Just play it safe
-            if(ratelimitRemaining < 3) {
+            if(ratelimitRemaining < 5) {
               logger.warn("Hit ratelimit ({} remaining), waiting until it expires...", ratelimitRemaining)
               logger.warn("Queue length: {}", queue.length)
               // Sleep until we're ready
