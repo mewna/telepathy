@@ -8,6 +8,7 @@ import com.mewna.nats.NatsServer
 import com.mewna.twitch.TwitchWebhookClient
 import com.mewna.twitch.ratelimit.TwitchRatelimiter
 import com.redis.{RedisClient, RedisClientPool}
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
  * @author amy
@@ -30,25 +31,27 @@ class Mewna {
   private val redisPool: RedisClientPool = new RedisClientPool(System.getenv("REDIS_HOST"), 6379,
     secret = Option[String](System.getenv("REDIS_PASS")))
   val nats: NatsServer = new NatsServer(this)
+  private val logger: Logger = LoggerFactory.getLogger(getClass)
   
   private def run(): Unit = {
     // NOTE: For now we only care about Twitch
     // We can do other stuff later
+    logger.info("Starting telepathy...")
+    logger.info("Connecting to NATS...")
     nats.connect()
+    logger.info("Starting API server...")
     api.startServer(4444)
+    logger.info("Starting Twitch queue polling...")
     twitchRatelimiter.startPollingQueue()
     val subscribes: String = System.getenv("subscribes")
     if(subscribes != null) {
       val ids = subscribes.split(",")
       ids.foreach(e => {
-        twitchRatelimiter.queueSubscribe(TwitchWebhookClient.TOPIC_STREAM_UP_DOWN, e, (_, _) => {
-          println("Subscribed to updown for " + e)
-        })
-        twitchRatelimiter.queueSubscribe(TwitchWebhookClient.TOPIC_FOLLOWS, e, (_, _) => {
-          println("Subscribed to follow for " + e)
-        })
+        twitchRatelimiter.queueSubscribe(TwitchWebhookClient.TOPIC_STREAM_UP_DOWN, e, (_, _) => {})
+        twitchRatelimiter.queueSubscribe(TwitchWebhookClient.TOPIC_FOLLOWS, e, (_, _) => {})
       })
     }
+    logger.info("Done!")
     
     // TODO: Handle Twitch pubsub somehow
     /*
