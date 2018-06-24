@@ -1,5 +1,6 @@
 package com.mewna
 
+import java.util.Optional
 import java.util.concurrent.{ExecutorService, Executors}
 
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -40,7 +41,7 @@ class Mewna {
     logger.info("Connecting to NATS...")
     nats.connect()
     logger.info("Starting API server...")
-    api.startServer(80)
+    api.startServer(Optional.ofNullable(System.getenv("API_PORT")).orElse("80").toInt)
     logger.info("Starting Twitch queue polling...")
     twitchRatelimiter.startPollingQueue()
     val subscribes: String = System.getenv("subscribes")
