@@ -63,7 +63,7 @@ final class TwitchWebhookClient(val mewna: Mewna) {
               })
             }
           })
-          // Wait a bit and start over
+          // Wait 5m and start over
           try {
             Thread.sleep(300000)
           } catch {
