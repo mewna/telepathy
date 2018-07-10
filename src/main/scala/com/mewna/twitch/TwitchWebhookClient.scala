@@ -43,24 +43,29 @@ final class TwitchWebhookClient(val mewna: Mewna) {
     mewna.threadPool.execute(() => {
       while(true) {
         try {
+          logger.info("REFRESH: Checking for resubs...")
           // Check for soon-to-die hooks
           mewna.redis(redis => {
             val hookMap = redis.hgetall1(WEBHOOK_STORE)
             if(hookMap.isDefined) {
               val map = hookMap.get
-              map.toSeq.map(x => (x._1, x._2.toInt)).filter(x => System.currentTimeMillis() - x._2 <= 86400000).foreach(x => {
-                val (idMode, _) = x
-                val strings = idMode.split(":")
-                val id = strings(0)
-                val mode = strings(1)
-                val topic = mode match {
-                  case "follows" => TwitchWebhookClient.TOPIC_FOLLOWS
-                  case "streams" => TwitchWebhookClient.TOPIC_STREAM_UP_DOWN
-                }
-                mewna.twitchRatelimiter.queueSubscribe(topic, id, (_, _) => {
-                  logger.info("Resubscribed to {} notifications for {}", mode: Any, id: Any)
+              map.toSeq.map(x => (x._1, x._2.toLong)).filter(x => System.currentTimeMillis() - x._2 <= TimeUnit.DAYS.toMillis(1))
+                .foreach(x => {
+                  val (idMode, _) = x
+                  val strings = idMode.split(":")
+                  val id = strings(0)
+                  val mode = strings(1)
+                  logger.info("REFRESH: Refreshing {}:{}", id: Any, mode: Any)
+                  val topic = mode match {
+                    case "follows" => TwitchWebhookClient.TOPIC_FOLLOWS
+                    case "streams" => TwitchWebhookClient.TOPIC_STREAM_UP_DOWN
+                  }
+                  mewna.twitchRatelimiter.queueSubscribe(topic, id, (_, _) => {
+                    logger.info("REFRESH: {} notifications for {}", mode: Any, id: Any)
+                  })
                 })
-              })
+            } else {
+              logger.warn("REFRESH: No hookmap!?")
             }
           })
           // Wait 5m and start over
