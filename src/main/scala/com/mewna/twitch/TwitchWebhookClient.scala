@@ -112,16 +112,20 @@ final class TwitchWebhookClient(val mewna: Mewna) {
     
     // If the hook is for more than a day, cache it so that we can refresh it
     if(leaseSeconds > 86400) {
+      val hookStoreMode = topic match {
+        case TwitchWebhookClient.TOPIC_FOLLOWS => "follows"
+        case TwitchWebhookClient.TOPIC_STREAM_UP_DOWN => "streams"
+      }
       mode match {
         case "subscribe" =>
           mewna.redis(redis => {
             // Set it to be one day before the lease expires, so that the refresher can catch it
-            redis.hset(WEBHOOK_STORE, userId + ":" + mode, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(leaseSeconds - 86400))
+            redis.hset(WEBHOOK_STORE, userId + ":" + hookStoreMode, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(leaseSeconds - 86400))
             logger.info("Subscribed to {} with data: {}", callback, body: Any)
           })
         case "unsubscribe" =>
           mewna.redis(redis => {
-            redis.hdel(WEBHOOK_STORE, userId + ":" + mode)
+            redis.hdel(WEBHOOK_STORE, userId + ":" + hookStoreMode)
             logger.info("Unsubscribed from {} with data: {}", callback, body: Any)
           })
       }
