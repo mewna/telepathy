@@ -132,7 +132,7 @@ class TwitchRatelimiter(val mewna: Mewna) {
                 handleRatelimitHeaders(headers)
                 callback(headers, body)
               case "unsubscribe" =>
-                val (headers, body) = mewna.twitchWebhookClient.subscribe(topic, userId, leaseSeconds = 864000)
+                val (headers, body) = mewna.twitchWebhookClient.unsubscribe(topic, userId, leaseSeconds = 864000)
                 handleRatelimitHeaders(headers)
                 callback(headers, body)
               case "lookup" =>
