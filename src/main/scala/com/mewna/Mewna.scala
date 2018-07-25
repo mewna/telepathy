@@ -55,7 +55,7 @@ class Mewna {
     }
     val unfollows: String = System.getenv("unfollows")
     if(unfollows != null) {
-      val ids = subscribes.split(",")
+      val ids = unfollows.split(",")
       ids.foreach(e => {
         twitchRatelimiter.queueUnsubscribe(TwitchWebhookClient.TOPIC_FOLLOWS, e, (_, _) => {})
       })
