@@ -53,6 +53,13 @@ class Mewna {
         twitchRatelimiter.queueSubscribe(TwitchWebhookClient.TOPIC_FOLLOWS, e, (_, _) => {})
       })
     }
+    val unfollows: String = System.getenv("unfollows")
+    if(unfollows != null) {
+      val ids = subscribes.split(",")
+      ids.foreach(e => {
+        twitchRatelimiter.queueUnsubscribe(TwitchWebhookClient.TOPIC_FOLLOWS, e, (_, _) => {})
+      })
+    }
     logger.info("Done!")
     
     // TODO: Handle Twitch pubsub somehow
