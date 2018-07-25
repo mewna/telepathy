@@ -49,7 +49,8 @@ final class TwitchWebhookClient(val mewna: Mewna) {
             val hookMap = redis.hgetall1(WEBHOOK_STORE)
             if(hookMap.isDefined) {
               val map = hookMap.get
-              map.toSeq.map(x => (x._1, x._2.toLong)).filter(x => System.currentTimeMillis() - x._2 <= TimeUnit.DAYS.toMillis(1))
+              
+              map.toSeq.map(x => (x._1, x._2.toLong)).filter(x => x._2 - System.currentTimeMillis() <= TimeUnit.DAYS.toMillis(1))
                 .foreach(x => {
                   val (idMode, _) = x
                   val strings = idMode.split(":")
