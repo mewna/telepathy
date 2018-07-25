@@ -44,7 +44,7 @@ class Mewna {
     api.startServer(Optional.ofNullable(System.getenv("API_PORT")).orElse("80").toInt)
     logger.info("Starting Twitch queue polling...")
     twitchRatelimiter.startPollingQueue()
-    twitchWebhookClient.startHookRefresher()
+    //twitchWebhookClient.startHookRefresher()
     val subscribes: String = System.getenv("subscribes")
     if(subscribes != null) {
       val ids = subscribes.split(",")
