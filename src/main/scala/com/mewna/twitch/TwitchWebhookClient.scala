@@ -41,6 +41,31 @@ final class TwitchWebhookClient(val mewna: Mewna) {
   
   def startHookRefresher(): Unit = {
     mewna.threadPool.execute(() => {
+      // Initial refresh
+      logger.info("REFRESH: Doing initial refresh...")
+      mewna.redis(redis => {
+        val hookMap = redis.hgetall1(WEBHOOK_STORE)
+        if(hookMap.isDefined) {
+          val map = hookMap.get
+          
+          map.toSeq.map(x => (x._1, x._2.toLong)).foreach(x => {
+            val (idMode, _) = x
+            val strings = idMode.split(":")
+            val id = strings(0)
+            val mode = strings(1)
+            logger.info("REFRESH: Refreshing {}:{}", id: Any, mode: Any)
+            val topic = mode match {
+              case "follows" => TwitchWebhookClient.TOPIC_FOLLOWS
+              case "streams" => TwitchWebhookClient.TOPIC_STREAM_UP_DOWN
+            }
+            mewna.twitchRatelimiter.queueSubscribe(topic, id, (_, _) => {
+              logger.info("REFRESH: {} notifications for {}", mode: Any, id: Any)
+            })
+          })
+        } else {
+          logger.warn("REFRESH: No hookmap!?")
+        }
+      })
       while(true) {
         try {
           logger.info("REFRESH: Checking for resubs...")
