@@ -39,6 +39,21 @@ final class TwitchWebhookClient(val mewna: Mewna) {
   private val WEBHOOK_STORE = "telepathy:webhook:store"
   val logger: Logger = LoggerFactory.getLogger(getClass)
   
+  def needsResub(id: String): Boolean = {
+    var needs = false
+    
+    mewna.redis(redis => {
+      val maybeString = redis.hget(WEBHOOK_STORE, id)
+      if(maybeString.isDefined) {
+        val time = maybeString.get.toLong
+        if(time - System.currentTimeMillis() <= TimeUnit.DAYS.toMillis(1)) {
+          needs = true
+        }
+      }
+    })
+    needs
+  }
+  
   def startHookRefresher(): Unit = {
     mewna.threadPool.execute(() => {
       // Initial refresh

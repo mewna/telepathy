@@ -51,9 +51,11 @@ class NatsServer(val mewna: Mewna) {
                     case "streams" => TwitchWebhookClient.TOPIC_STREAM_UP_DOWN
                     case "follows" => TwitchWebhookClient.TOPIC_FOLLOWS
                   }
-                  mewna.twitchRatelimiter.queueSubscribe(topic, id, (_, _) => {
-                    logger.info("Subscribed to id {} " + topic, id)
-                  })
+                  if(mewna.twitchWebhookClient.needsResub(id)) {
+                    mewna.twitchRatelimiter.queueSubscribe(topic, id, (_, _) => {
+                      logger.info("Subscribed to id {} " + topic, id)
+                    })
+                  }
                 case "TWITCH_UNSUBSCRIBE" =>
                   val id = data.getString("id")
                   val topic = data.getString("topic") match {
