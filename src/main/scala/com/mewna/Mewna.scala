@@ -45,6 +45,7 @@ class Mewna {
     logger.info("Starting Twitch queue polling...")
     twitchRatelimiter.startPollingQueue()
     twitchWebhookClient.startHookRefresher()
+    logger.info("Checking env...")
     val subscribes: String = System.getenv("subscribes")
     if(subscribes != null) {
       val ids = subscribes.split(",")
