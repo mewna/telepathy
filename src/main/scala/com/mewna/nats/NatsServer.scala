@@ -1,6 +1,7 @@
 package com.mewna.nats
 
 import java.io.IOException
+import java.util.UUID
 
 import com.mewna.Mewna
 import com.mewna.twitch.TwitchWebhookClient
@@ -16,7 +17,7 @@ import org.slf4j.{Logger, LoggerFactory}
 class NatsServer(val mewna: Mewna) {
   private val logger: Logger = LoggerFactory.getLogger(getClass)
   // TODO: Client ID needs to use container name; use metadata service to fetch this
-  private val connectionFactory: StreamingConnectionFactory = new StreamingConnectionFactory("mewna-nats", "mewna-telepathy-server")
+  private val connectionFactory: StreamingConnectionFactory = new StreamingConnectionFactory("mewna-nats", "mewna-telepathy-server" + UUID.randomUUID())
   
   private var connection: StreamingConnection = _
   

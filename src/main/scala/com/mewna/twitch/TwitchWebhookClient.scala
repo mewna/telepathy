@@ -49,6 +49,8 @@ final class TwitchWebhookClient(val mewna: Mewna) {
         if(time - System.currentTimeMillis() <= TimeUnit.DAYS.toMillis(1)) {
           needs = true
         }
+      } else {
+        needs = true
       }
     })
     needs
