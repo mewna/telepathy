@@ -121,7 +121,9 @@ class TwitchRatelimiter(val mewna: Mewna) {
                 mewna.redis(redis => redis.hset(HASH_KEY, HASH_RATELIMIT_REMAINING, 120))
                 logger.info("Finished waiting!")
               } catch {
-                case e: InterruptedException => e.printStackTrace()
+                case e: InterruptedException =>
+                  e.printStackTrace()
+                  mewna.redis(redis => redis.hset(HASH_KEY, HASH_RATELIMIT_REMAINING, 120))
               }
             }
             // pop the next thing off the queue and go
