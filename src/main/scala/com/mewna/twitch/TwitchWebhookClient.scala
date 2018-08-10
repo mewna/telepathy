@@ -70,7 +70,7 @@ final class TwitchWebhookClient(val mewna: Mewna) {
             val strings = idMode.split(":")
             val id = strings(0)
             val mode = strings(1)
-            logger.info("REFRESH: Refreshing {}:{}", id: Any, mode: Any)
+            logger.debug("REFRESH: Refreshing {}:{}", id: Any, mode: Any)
             val topic = mode match {
               case "follows" => TwitchWebhookClient.TOPIC_FOLLOWS
               case "streams" => TwitchWebhookClient.TOPIC_STREAM_UP_DOWN
@@ -85,20 +85,20 @@ final class TwitchWebhookClient(val mewna: Mewna) {
       })
       while(true) {
         try {
-          logger.info("REFRESH: Checking for resubs...")
+          logger.debug("REFRESH: Checking for resubs...")
           // Check for soon-to-die hooks
           mewna.redis(redis => {
             val hookMap = redis.hgetall1(WEBHOOK_STORE)
             if(hookMap.isDefined) {
               val map = hookMap.get
               
-              map.toSeq.map(x => (x._1, x._2.toLong)).filter(x => x._2 - System.currentTimeMillis() <= TimeUnit.DAYS.toMillis(1))
+              map.toSeq.map(x => (x._1, x._2.toLong)).filter(x => x._2 - System.currentTimeMillis() <= TimeUnit.DAYS.toMillis(5))
                 .foreach(x => {
                   val (idMode, _) = x
                   val strings = idMode.split(":")
                   val id = strings(0)
                   val mode = strings(1)
-                  logger.info("REFRESH: Refreshing {}:{}", id: Any, mode: Any)
+                  logger.debug("REFRESH: Refreshing {}:{}", id: Any, mode: Any)
                   val topic = mode match {
                     case "follows" => TwitchWebhookClient.TOPIC_FOLLOWS
                     case "streams" => TwitchWebhookClient.TOPIC_STREAM_UP_DOWN

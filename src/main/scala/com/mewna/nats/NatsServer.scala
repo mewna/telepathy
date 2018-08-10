@@ -54,7 +54,7 @@ class NatsServer(val mewna: Mewna) {
                   }
                   if(mewna.twitchWebhookClient.needsResub(id)) {
                     mewna.twitchRatelimiter.queueSubscribe(topic, id, (_, _) => {
-                      logger.info("Subscribed to id {} " + topic, id)
+                      logger.info("Refreshed {}", id)
                     })
                   }
                 case "TWITCH_UNSUBSCRIBE" =>
