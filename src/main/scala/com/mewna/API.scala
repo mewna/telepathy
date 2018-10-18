@@ -38,7 +38,7 @@ class API(val mewna: Mewna) {
               (_, toBody) => {
                 // Construct the follow event
                 val event: JSONObject = new JSONObject().put("from", fromBody).put("to", toBody)
-                mewna.nats.pushBackendEvent("TWITCH_FOLLOWER", event)
+                mewna.q.pushBackendEvent("TWITCH_FOLLOWER", event)
                 logger.info("TWITCH_FOLLOWER - {} ({}) -> {} ({})",
                   Array(fromBody.getString("login"), fromBody.getString("id"),
                     toBody.getString("login"), toBody.getString("id")): _*
@@ -84,7 +84,7 @@ class API(val mewna: Mewna) {
         mewna.twitchRatelimiter.queueLookupUser(dataArray.get(0).asInstanceOf[JSONObject].getString("user_id"),
           (_, streamer) => {
             val streamData = new JSONObject().put("streamData", dataArray.get(0).asInstanceOf[JSONObject]).put("streamer", streamer)
-            mewna.nats.pushBackendEvent("TWITCH_STREAM_START", streamData)
+            mewna.q.pushBackendEvent("TWITCH_STREAM_START", streamData)
             logger.info("TWITCH_STREAM_START for {} ({})", streamer.getString("login"): String, streamer.getString("id"): Any)
           })
       } else {
@@ -92,7 +92,7 @@ class API(val mewna: Mewna) {
         mewna.twitchRatelimiter.queueLookupUser(req.params(":id"),
           (_, streamer) => {
             val streamData = new JSONObject().put("streamer", streamer)
-            mewna.nats.pushBackendEvent("TWITCH_STREAM_END", streamData)
+            mewna.q.pushBackendEvent("TWITCH_STREAM_END", streamData)
             logger.info("TWITCH_STREAM_END for {} ({})", streamer.getString("login"): String, streamer.getString("id"): Any)
           })
       }

@@ -5,7 +5,7 @@ import java.util.concurrent.{ExecutorService, Executors}
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.mewna.nats.NatsServer
+import com.mewna.nats.{NatsServer, Q}
 import com.mewna.twitch.TwitchWebhookClient
 import com.mewna.twitch.ratelimit.TwitchRatelimiter
 import com.redis.{RedisClient, RedisClientPool}
@@ -31,7 +31,8 @@ class Mewna {
   val twitchRatelimiter: TwitchRatelimiter = new TwitchRatelimiter(this)
   private val redisPool: RedisClientPool = new RedisClientPool(System.getenv("REDIS_HOST"), 6379,
     secret = Option[String](System.getenv("REDIS_PASS")))
-  val nats: NatsServer = new NatsServer(this)
+  // val nats: NatsServer = new NatsServer(this)
+  val q: Q = new Q(this)
   private val logger: Logger = LoggerFactory.getLogger(getClass)
   
   private def run(): Unit = {
@@ -39,7 +40,8 @@ class Mewna {
     // We can do other stuff later
     logger.info("Starting telepathy...")
     logger.info("Connecting to NATS...")
-    nats.connect()
+    // nats.connect()
+    q.connect()
     logger.info("Starting API server...")
     api.startServer(Optional.ofNullable(System.getenv("API_PORT")).orElse("80").toInt)
     logger.info("Starting Twitch queue polling...")

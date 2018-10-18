@@ -236,22 +236,22 @@
     </dependency>
   </dependencies>
   <properties>
+    <maven.compiler.source>1.6</maven.compiler.source>
     <nv.websocket.version>2.4</nv.websocket.version>
-    <twitter.version>4.0.4</twitter.version>
+    <redis.version>3.7</redis.version>
+    <jackson.version>2.9.5</jackson.version>
     <encoding>UTF-8</encoding>
     <org.json.version>20180130</org.json.version>
-    <maven.compiler.target>1.6</maven.compiler.target>
-    <okhttp.version>3.10.0</okhttp.version>
     <nats.version>0.5.0</nats.version>
-    <redis.version>3.7</redis.version>
-    <logback.version>1.2.3</logback.version>
+    <maven.compiler.target>1.6</maven.compiler.target>
+    <spark.version>2.7.2</spark.version>
+    <okhttp.version>3.10.0</okhttp.version>
     <reddit.version>1.0.0</reddit.version>
-    <jackson.version>2.9.5</jackson.version>
+    <scala.compat.version>2.12</scala.compat.version>
     <twitch.version>v0.10.0</twitch.version>
     <scala.version>2.12.6</scala.version>
-    <scala.compat.version>2.12</scala.compat.version>
-    <spark.version>2.7.2</spark.version>
-    <maven.compiler.source>1.6</maven.compiler.source>
+    <twitter.version>4.0.4</twitter.version>
+    <logback.version>1.2.3</logback.version>
   </properties>
 </project>
 
