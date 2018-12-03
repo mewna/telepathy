@@ -45,7 +45,7 @@ class Q(val mewna: Mewna) {
                     case "follows" => TwitchWebhookClient.TOPIC_FOLLOWS
                   }
                   mewna.twitchRatelimiter.queueUnsubscribe(topic, id, (_, _) => {
-                    logger.info("Unsubscribed from id {} " + topic, id)
+                    logger.info("Unsubscribed from id {}", id)
                   })
               }
             })
