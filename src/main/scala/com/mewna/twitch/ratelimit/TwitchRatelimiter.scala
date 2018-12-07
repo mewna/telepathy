@@ -3,7 +3,7 @@ package com.mewna.twitch.ratelimit
 import java.util.concurrent.{Future, TimeUnit}
 
 import com.mewna.Mewna
-import org.json.JSONObject
+import io.vertx.core.json.JsonObject
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.mutable
@@ -23,21 +23,21 @@ class TwitchRatelimiter(val mewna: Mewna) {
   
   private val logger: Logger = LoggerFactory.getLogger(getClass)
   
-  private var queue = new mutable.Queue[(String, String, String, (Map[String, List[String]], JSONObject) => Unit)]()
+  private var queue = new mutable.Queue[(String, String, String, (Map[String, List[String]], JsonObject) => Unit)]()
   
-  def queueSubscribe(topic: String, userId: String, callback: (Map[String, List[String]], JSONObject) => Unit = (_, _) => {}): Unit = {
+  def queueSubscribe(topic: String, userId: String, callback: (Map[String, List[String]], JsonObject) => Unit = (_, _) => {}): Unit = {
     queue += (("subscribe", topic, userId, callback))
   }
   
-  def queueUnsubscribe(topic: String, userId: String, callback: (Map[String, List[String]], JSONObject) => Unit = (_, _) => {}): Unit = {
+  def queueUnsubscribe(topic: String, userId: String, callback: (Map[String, List[String]], JsonObject) => Unit = (_, _) => {}): Unit = {
     queue += (("unsubscribe", topic, userId, callback))
   }
   
-  def queueLookupUser(userId: String, callback: (Map[String, List[String]], JSONObject) => Unit = (_, _) => {}): Unit = {
+  def queueLookupUser(userId: String, callback: (Map[String, List[String]], JsonObject) => Unit = (_, _) => {}): Unit = {
     // If we already have the user, we should just return them immediately rather than waiting in the queue
     mewna.redis(redis => {
       if(redis.exists(USER_ID_CACHE_FORMAT.format(userId))) {
-        val res = new JSONObject(redis.get(USER_ID_CACHE_FORMAT.format(userId)).get)
+        val res = new JsonObject(redis.get(USER_ID_CACHE_FORMAT.format(userId)).get)
         val outerHeaders: Map[String, List[String]] = null
         callback(outerHeaders, res)
       } else {
@@ -46,11 +46,11 @@ class TwitchRatelimiter(val mewna: Mewna) {
     })
   }
   
-  def queueLookupUserName(userId: String, callback: (Map[String, List[String]], JSONObject) => Unit = (_, _) => {}): Unit = {
+  def queueLookupUserName(userId: String, callback: (Map[String, List[String]], JsonObject) => Unit = (_, _) => {}): Unit = {
     // If we already have the user, we should just return them immediately rather than waiting in the queue
     mewna.redis(redis => {
       if(redis.exists(USER_NAME_CACHE_FORMAT.format(userId))) {
-        val res = new JSONObject(redis.get(USER_NAME_CACHE_FORMAT.format(userId)).get)
+        val res = new JsonObject(redis.get(USER_NAME_CACHE_FORMAT.format(userId)).get)
         val outerHeaders: Map[String, List[String]] = null
         callback(outerHeaders, res)
       } else {
@@ -59,9 +59,9 @@ class TwitchRatelimiter(val mewna: Mewna) {
     })
   }
   
-  def queueFutureLookupUserId(name: String): Future[JSONObject] = {
+  def queueFutureLookupUserId(name: String): Future[JsonObject] = {
     mewna.threadPool.submit(() => {
-      var (headers, data): (Map[String, List[String]], JSONObject) = (Map(), new JSONObject())
+      var (headers, data): (Map[String, List[String]], JsonObject) = (Map(), new JsonObject())
       queueLookupUser(name, (_headers, _data) => {
         headers = _headers
         data = _data
@@ -73,9 +73,9 @@ class TwitchRatelimiter(val mewna: Mewna) {
     })
   }
   
-  def queueFutureLookupUserName(name: String): Future[JSONObject] = {
+  def queueFutureLookupUserName(name: String): Future[JsonObject] = {
     mewna.threadPool.submit(() => {
-      var (headers, data): (Map[String, List[String]], JSONObject) = (Map(), new JSONObject())
+      var (headers, data): (Map[String, List[String]], JsonObject) = (Map(), new JsonObject())
       queueLookupUserName(name, (_headers, _data) => {
         headers = _headers
         data = _data
@@ -150,12 +150,12 @@ class TwitchRatelimiter(val mewna: Mewna) {
                 mewna.redis(redis => {
                   val (headers, body) = mewna.twitchWebhookClient.getUserByName(userId)
                   handleRatelimitHeaders(headers)
-                  if(body.toString().equals("{}") || (body.has("status") && body.getInt("status") == 400)) {
+                  if(body.toString.equals("{}") || (body.containsKey("status") && body.getInteger("status") == 400)) {
                     // :fire: :blobcatfireeyes:
-                    callback(null: Map[String, List[String]], new JSONObject().put("status", "400"))
+                    callback(null: Map[String, List[String]], new JsonObject().put("status", "400"))
                   } else {
                     // Expire cache after a day
-                    redis.set(USER_NAME_CACHE_FORMAT.format(userId), body.toString())
+                    redis.set(USER_NAME_CACHE_FORMAT.format(userId), body.toString)
                     redis.expire(USER_NAME_CACHE_FORMAT.format(userId), 86400)
                     callback(headers, body)
                   }

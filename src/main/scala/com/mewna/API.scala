@@ -2,7 +2,7 @@ package com.mewna
 
 import java.util.concurrent.Future
 
-import org.json.JSONObject
+import io.vertx.core.json.JsonObject
 import org.slf4j.{Logger, LoggerFactory}
 import spark.Request
 import spark.Spark._
@@ -26,19 +26,19 @@ class API(val mewna: Mewna) {
    * }
    */
   private def handleFollows(req: Request): Unit = {
-    val json = new JSONObject(req.body())
+    val json = new JsonObject(req.body())
     // TODO: Sometimes this has no [0]?
-    val jsonArray = json.getJSONArray("data")
+    val jsonArray = json.getJsonArray("data")
     if(jsonArray != null) {
-      if(jsonArray.length() > 0) {
-        val payload = jsonArray.get(0).asInstanceOf[JSONObject]
+      if(jsonArray.size() > 0) {
+        val payload = jsonArray.getJsonObject(0)
         mewna.twitchRatelimiter.queueLookupUser(payload.getString("from_id"),
           (_, fromBody) => {
             mewna.twitchRatelimiter.queueLookupUser(payload.getString("to_id"),
               (_, toBody) => {
                 // Construct the follow event
-                val event: JSONObject = new JSONObject().put("from", fromBody).put("to", toBody)
-                mewna.q.pushBackendEvent("TWITCH_FOLLOWER", event)
+                val event: JsonObject = new JsonObject().put("from", fromBody).put("to", toBody)
+                mewna.eventManager.pushBackendEvent("TWITCH_FOLLOWER", event)
                 logger.info("TWITCH_FOLLOWER - {} ({}) -> {} ({})",
                   Array(fromBody.getString("login"), fromBody.getString("id"),
                     toBody.getString("login"), toBody.getString("id")): _*
@@ -60,7 +60,7 @@ class API(val mewna: Mewna) {
    *       "user_id": "5678", // Streamer's user id
    *       "game_id": "21779", // Game's Twitch id
    *       "community_ids": [], // IDs of communities the streamer is streaming with
-   *       "type": "live", // Should be "live", will only be "" in case of errpr
+   *       "type": "live", // Should be "live", will only be "" in case of error
    *       "title": "Best Stream Ever", // Duh
    *       "viewer_count": 417, // Duh
    *       "started_at": "2017-12-01T10:09:45Z", // Duh
@@ -77,22 +77,23 @@ class API(val mewna: Mewna) {
    */
   private def handleStreamUpDown(req: Request): Unit = {
     if(req.body().length > 0) {
-      val json = new JSONObject(req.body())
-      val dataArray = json.getJSONArray("data")
-      if(dataArray.length() > 0) {
+      val json = new JsonObject(req.body())
+      val dataArray = json.getJsonArray("data")
+      if(dataArray.size() > 0) {
+        logger.info("Got stream update: {}", dataArray.getJsonObject(0))
         // Stream start
-        mewna.twitchRatelimiter.queueLookupUser(dataArray.get(0).asInstanceOf[JSONObject].getString("user_id"),
+        mewna.twitchRatelimiter.queueLookupUser(dataArray.getJsonObject(0).getString("user_id"),
           (_, streamer) => {
-            val streamData = new JSONObject().put("streamData", dataArray.get(0).asInstanceOf[JSONObject]).put("streamer", streamer)
-            mewna.q.pushBackendEvent("TWITCH_STREAM_START", streamData)
+            val streamData = new JsonObject().put("streamData", dataArray.getJsonObject(0)).put("streamer", streamer)
+            mewna.eventManager.pushBackendEvent("TWITCH_STREAM_START", streamData)
             logger.info("TWITCH_STREAM_START for {} ({})", streamer.getString("login"): String, streamer.getString("id"): Any)
           })
       } else {
         // Stream end
         mewna.twitchRatelimiter.queueLookupUser(req.params(":id"),
           (_, streamer) => {
-            val streamData = new JSONObject().put("streamer", streamer)
-            mewna.q.pushBackendEvent("TWITCH_STREAM_END", streamData)
+            val streamData = new JsonObject().put("streamer", streamer)
+            mewna.eventManager.pushBackendEvent("TWITCH_STREAM_END", streamData)
             logger.info("TWITCH_STREAM_END for {} ({})", streamer.getString("login"): String, streamer.getString("id"): Any)
           })
       }
@@ -107,25 +108,25 @@ class API(val mewna: Mewna) {
         path("/twitch", () => {
           post("/follows/:id", (req, _) => {
             handleFollows(req)
-            new JSONObject()
+            new JsonObject()
           })
           post("/streams/:id", (req, _) => {
             handleStreamUpDown(req)
-            new JSONObject()
+            new JsonObject()
           })
           
           get("/follows/:id", (req, _) => req.queryParams("hub.challenge"))
           get("/streams/:id", (req, _) => req.queryParams("hub.challenge"))
           
           get("/lookup/name/:name", (req, _) => {
-            val future: Future[JSONObject] = mewna.twitchRatelimiter.queueFutureLookupUserName(req.params(":name"))
-            val data: JSONObject = future.get()
+            val future: Future[JsonObject] = mewna.twitchRatelimiter.queueFutureLookupUserName(req.params(":name"))
+            val data: JsonObject = future.get()
             data
           })
           
           get("/lookup/id/:id", (req, _) => {
-            val future: Future[JSONObject] = mewna.twitchRatelimiter.queueFutureLookupUserId(req.params(":id"))
-            val data: JSONObject = future.get()
+            val future: Future[JsonObject] = mewna.twitchRatelimiter.queueFutureLookupUserId(req.params(":id"))
+            val data: JsonObject = future.get()
             data
           })
         })

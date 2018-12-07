@@ -13,23 +13,25 @@
         <encoding>UTF-8</encoding>
         <scala.version>2.12.6</scala.version>
         <scala.compat.version>2.12</scala.compat.version>
+        <singyeong.version>d10544a</singyeong.version>
         <jackson.version>2.9.5</jackson.version>
         <twitch.version>v0.10.0</twitch.version>
-        <reddit.version>1.0.0</reddit.version>
-        <twitter.version>4.0.4</twitter.version>
         <nv.websocket.version>2.4</nv.websocket.version>
-        <org.json.version>20180130</org.json.version>
         <logback.version>1.2.3</logback.version>
         <okhttp.version>3.10.0</okhttp.version>
         <spark.version>2.7.2</spark.version>
         <redis.version>3.7</redis.version>
-        <nats.version>0.5.0</nats.version>
     </properties>
 
     <repositories>
         <repository>
             <id>jcenter</id>
             <url>https://jcenter.bintray.com/</url>
+        </repository>
+
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
         </repository>
     </repositories>
 
@@ -38,6 +40,13 @@
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
             <version>${scala.version}</version>
+        </dependency>
+
+        <!-- singyeong -->
+        <dependency>
+            <groupId>com.github.singyeong</groupId>
+            <artifactId>java-client</artifactId>
+            <version>${singyeong.version}</version>
         </dependency>
 
         <!-- Redis -->
@@ -83,20 +92,6 @@
             <artifactId>spark-core</artifactId>
             <version>${spark.version}</version>
             <classifier>javadoc</classifier>
-        </dependency>
-
-
-        <!-- Reddit -->
-        <dependency>
-            <groupId>net.dean.jraw</groupId>
-            <artifactId>JRAW</artifactId>
-            <version>${reddit.version}</version>
-        </dependency>
-        <!-- Twitter -->
-        <dependency>
-            <groupId>org.twitter4j</groupId>
-            <artifactId>twitter4j-core</artifactId>
-            <version>${twitter.version}</version>
         </dependency>
 
         <!-- nv-websocket-client -->
@@ -179,13 +174,6 @@
             <version>${jackson.version}</version>
         </dependency>
 
-        <!-- org.json -->
-        <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-            <version>${org.json.version}</version>
-        </dependency>
-
         <!-- Logback -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -202,25 +190,6 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
-            <classifier>javadoc</classifier>
-        </dependency>
-
-        <!-- nats-streaming -->
-        <dependency>
-            <groupId>io.nats</groupId>
-            <artifactId>java-nats-streaming</artifactId>
-            <version>${nats.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.nats</groupId>
-            <artifactId>java-nats-streaming</artifactId>
-            <version>${nats.version}</version>
-            <classifier>sources</classifier>
-        </dependency>
-        <dependency>
-            <groupId>io.nats</groupId>
-            <artifactId>java-nats-streaming</artifactId>
-            <version>${nats.version}</version>
             <classifier>javadoc</classifier>
         </dependency>
 

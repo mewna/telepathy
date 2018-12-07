@@ -3,8 +3,8 @@ package com.mewna.twitch
 import java.util.concurrent.TimeUnit
 
 import com.mewna.Mewna
+import io.vertx.core.json.JsonObject
 import okhttp3.{MediaType, OkHttpClient, Request, RequestBody}
-import org.json.JSONObject
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConverters._
@@ -124,20 +124,20 @@ final class TwitchWebhookClient(val mewna: Mewna) {
     })
   }
   
-  def subscribe(topic: String, userId: String, leaseSeconds: Int = 0, cache: Boolean = true): (Map[String, List[String]], JSONObject) = {
+  def subscribe(topic: String, userId: String, leaseSeconds: Int = 0, cache: Boolean = true): (Map[String, List[String]], JsonObject) = {
     updateHook("subscribe", topic, userId, leaseSeconds, cache)
   }
   
-  def unsubscribe(topic: String, userId: String, leaseSeconds: Int = 0, cache: Boolean = true): (Map[String, List[String]], JSONObject) = {
+  def unsubscribe(topic: String, userId: String, leaseSeconds: Int = 0, cache: Boolean = true): (Map[String, List[String]], JsonObject) = {
     updateHook("unsubscribe", topic, userId, leaseSeconds, cache)
   }
   
-  def updateHook(mode: String, topic: String, userId: String, leaseSeconds: Int = 0, cache: Boolean = true): (Map[String, List[String]], JSONObject) = {
+  def updateHook(mode: String, topic: String, userId: String, leaseSeconds: Int = 0, cache: Boolean = true): (Map[String, List[String]], JsonObject) = {
     val callback = topic match {
       case TwitchWebhookClient.TOPIC_FOLLOWS => System.getenv("DOMAIN") + "/api/v1/twitch/follows/" + userId
       case TwitchWebhookClient.TOPIC_STREAM_UP_DOWN => System.getenv("DOMAIN") + "/api/v1/twitch/streams/" + userId
     }
-    val data = new JSONObject()
+    val data = new JsonObject()
       .put("hub.callback", callback)
       .put("hub.mode", mode)
       .put("hub.topic", topic.format(userId))
@@ -182,13 +182,13 @@ final class TwitchWebhookClient(val mewna: Mewna) {
     // If you send a malformed request in some way, it does yell at you, so I guess
     // that it's only in the case of success that the body is empty?
     (headers, if(body.length == 0) {
-      new JSONObject()
+      new JsonObject()
     } else {
-      new JSONObject(body)
+      new JsonObject(body)
     })
   }
   
-  def getUserById(id: String): (Map[String, List[String]], JSONObject) = {
+  def getUserById(id: String): (Map[String, List[String]], JsonObject) = {
     val res = client.newCall(new Request.Builder().url(TwitchWebhookClient.GET_USERS + "?id=" + id)
       .get()
       .header("Authorization", "Bearer " + System.getenv("TWITCH_OAUTH").replace("oauth:", ""))
@@ -196,30 +196,30 @@ final class TwitchWebhookClient(val mewna: Mewna) {
     val body = res.body().string()
     val headers: Map[String, List[String]] = res.headers().toMultimap.asScala.mapValues(_.asScala.toList).toMap
     (headers, if(body.length == 0) {
-      new JSONObject()
+      new JsonObject()
     } else {
-      val jsonObject = new JSONObject(body)
+      val jsonObject = new JsonObject(body)
       // ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
-      if(jsonObject.getJSONArray("data").length() > 0) {
-        jsonObject.getJSONArray("data").get(0).asInstanceOf[JSONObject]
+      if(jsonObject.getJsonArray("data").size() > 0) {
+        jsonObject.getJsonArray("data").getJsonObject(0)
       } else {
-        new JSONObject()
+        new JsonObject()
       }
     })
   }
   
-  def getUserByName(name: String): (Map[String, List[String]], JSONObject) = {
+  def getUserByName(name: String): (Map[String, List[String]], JsonObject) = {
     val res = client.newCall(new Request.Builder().url(TwitchWebhookClient.GET_USERS + "?login=" + name)
       .get()
       .header("Authorization", "Bearer " + System.getenv("TWITCH_OAUTH").replace("oauth:", ""))
       .build()).execute()
     val body = res.body().string()
     val headers: Map[String, List[String]] = res.headers().toMultimap.asScala.mapValues(_.asScala.toList).toMap
-    val nObject = new JSONObject(body)
-    (headers, if(body.length == 0 || !nObject.has("data") || nObject.getJSONArray("data").length() == 0) {
-      new JSONObject()
+    val nObject = new JsonObject(body)
+    (headers, if(body.length == 0 || !nObject.containsKey("data") || nObject.getJsonArray("data").size() == 0) {
+      new JsonObject()
     } else {
-      nObject.getJSONArray("data").get(0).asInstanceOf[JSONObject]
+      nObject.getJsonArray("data").getJsonObject(0)
     })
   }
 }

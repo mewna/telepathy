@@ -5,10 +5,12 @@ import java.util.concurrent.{ExecutorService, Executors}
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.mewna.nats.{NatsServer, Q}
+import com.mewna.nats.SingyeongEventManager
 import com.mewna.twitch.TwitchWebhookClient
 import com.mewna.twitch.ratelimit.TwitchRatelimiter
 import com.redis.{RedisClient, RedisClientPool}
+import gg.amy.singyeong.SingyeongClient
+import io.vertx.core.Vertx
 import org.slf4j.{Logger, LoggerFactory}
 
 /**
@@ -31,39 +33,46 @@ class Mewna {
   val twitchRatelimiter: TwitchRatelimiter = new TwitchRatelimiter(this)
   private val redisPool: RedisClientPool = new RedisClientPool(System.getenv("REDIS_HOST"), 6379,
     secret = Option[String](System.getenv("REDIS_PASS")))
-  // val nats: NatsServer = new NatsServer(this)
-  val q: Q = new Q(this)
+  val singyeong = new SingyeongClient(System.getenv("SINGYEONG_DSN"), Vertx.vertx(), "telepathy")
+  val eventManager = new SingyeongEventManager(this)
   private val logger: Logger = LoggerFactory.getLogger(getClass)
   
   private def run(): Unit = {
     // NOTE: For now we only care about Twitch
     // We can do other stuff later
     logger.info("Starting telepathy...")
-    logger.info("Connecting to NATS...")
-    // nats.connect()
-    q.connect()
-    logger.info("Starting API server...")
-    api.startServer(Optional.ofNullable(System.getenv("API_PORT")).orElse("80").toInt)
-    logger.info("Starting Twitch queue polling...")
-    twitchRatelimiter.startPollingQueue()
-    twitchWebhookClient.startHookRefresher()
-    logger.info("Checking env...")
-    val subscribes: String = System.getenv("subscribes")
-    if(subscribes != null) {
-      val ids = subscribes.split(",")
-      ids.foreach(e => {
-        twitchRatelimiter.queueSubscribe(TwitchWebhookClient.TOPIC_STREAM_UP_DOWN, e, (_, _) => {})
-        twitchRatelimiter.queueSubscribe(TwitchWebhookClient.TOPIC_FOLLOWS, e, (_, _) => {})
+    
+    singyeong.connect().thenAccept(_ => {
+      logger.info("Starting API server...")
+      api.startServer(Optional.ofNullable(System.getenv("API_PORT")).orElse("80").toInt)
+    }).thenAccept(_ => {
+      logger.info("Starting Twitch queue polling...")
+      twitchRatelimiter.startPollingQueue()
+      twitchWebhookClient.startHookRefresher()
+    }).thenAccept(_ => {
+      logger.info("Checking env...")
+      val subscribes: String = System.getenv("subscribes")
+      if(subscribes != null) {
+        val ids = subscribes.split(",")
+        ids.foreach(e => {
+          twitchRatelimiter.queueSubscribe(TwitchWebhookClient.TOPIC_STREAM_UP_DOWN, e, (_, _) => {})
+          twitchRatelimiter.queueSubscribe(TwitchWebhookClient.TOPIC_FOLLOWS, e, (_, _) => {})
+        })
+      }
+      val unfollows: String = System.getenv("unfollows")
+      if(unfollows != null) {
+        val ids = unfollows.split(",")
+        ids.foreach(e => {
+          twitchRatelimiter.queueUnsubscribe(TwitchWebhookClient.TOPIC_FOLLOWS, e, (_, _) => {})
+        })
+      }
+    }).thenAccept(_ => {
+      singyeong.onEvent(dispatch => {
+        eventManager.onEvent(dispatch)
       })
-    }
-    val unfollows: String = System.getenv("unfollows")
-    if(unfollows != null) {
-      val ids = unfollows.split(",")
-      ids.foreach(e => {
-        twitchRatelimiter.queueUnsubscribe(TwitchWebhookClient.TOPIC_FOLLOWS, e, (_, _) => {})
-      })
-    }
-    logger.info("Done!")
+    }).thenAccept(_ => {
+      logger.info("Done!")
+    })
     
     // TODO: Handle Twitch pubsub somehow
     /*
