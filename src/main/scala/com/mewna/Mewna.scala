@@ -33,7 +33,7 @@ class Mewna {
   val twitchRatelimiter: TwitchRatelimiter = new TwitchRatelimiter(this)
   private val redisPool: RedisClientPool = new RedisClientPool(System.getenv("REDIS_HOST"), 6379,
     secret = Option[String](System.getenv("REDIS_PASS")))
-  val singyeong = new SingyeongClient(System.getenv("SINGYEONG_DSN"), Vertx.vertx(), "telepathy")
+  val singyeong = SingyeongClient.create(Vertx.vertx(), System.getenv("SINGYEONG_DSN"))
   val eventManager = new SingyeongEventManager(this)
   private val logger: Logger = LoggerFactory.getLogger(getClass)
   
