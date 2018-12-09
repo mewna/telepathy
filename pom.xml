@@ -13,7 +13,7 @@
         <encoding>UTF-8</encoding>
         <scala.version>2.12.6</scala.version>
         <scala.compat.version>2.12</scala.compat.version>
-        <singyeong.version>c8739b1</singyeong.version>
+        <singyeong.version>3e90002</singyeong.version>
         <jackson.version>2.9.5</jackson.version>
         <twitch.version>v0.10.0</twitch.version>
         <nv.websocket.version>2.4</nv.websocket.version>
