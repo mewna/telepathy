@@ -80,14 +80,17 @@ class API(val mewna: Mewna) {
       val json = new JsonObject(req.body())
       val dataArray = json.getJsonArray("data")
       if(dataArray.size() > 0) {
-        logger.info("Got stream update: {}", dataArray.getJsonObject(0))
-        // Stream start
-        mewna.twitchRatelimiter.queueLookupUser(dataArray.getJsonObject(0).getString("user_id"),
-          (_, streamer) => {
-            val streamData = new JsonObject().put("streamData", dataArray.getJsonObject(0)).put("streamer", streamer)
-            mewna.eventManager.pushBackendEvent("TWITCH_STREAM_START", streamData)
-            logger.info("TWITCH_STREAM_START for {} ({})", streamer.getString("login"): String, streamer.getString("id"): Any)
-          })
+        val obj = dataArray.getJsonObject(0)
+        if(obj.getString("type").equals("live")) {
+          logger.info("Got stream update: {}", obj)
+          // Stream start
+          mewna.twitchRatelimiter.queueLookupUser(obj.getString("user_id"),
+            (_, streamer) => {
+              val streamData = new JsonObject().put("streamData", obj).put("streamer", streamer)
+              mewna.eventManager.pushBackendEvent("TWITCH_STREAM_START", streamData)
+              logger.info("TWITCH_STREAM_START for {} ({})", streamer.getString("login"): String, streamer.getString("id"): Any)
+            })
+        }
       } else {
         // Stream end
         mewna.twitchRatelimiter.queueLookupUser(req.params(":id"),
