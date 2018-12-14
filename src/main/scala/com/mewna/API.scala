@@ -101,7 +101,7 @@ class API(val mewna: Mewna) {
         }
       } else {
         // Stream end
-        val id =
+        val id = req.params(":id")
         
         mewna.redis(redis => {
           if(redis.exists("telepathy:streamer:live:" + id)) {
