@@ -77,6 +77,7 @@ class API(val mewna: Mewna) {
    */
   private def handleStreamUpDown(req: Request): Unit = {
     if(req.body().length > 0) {
+      logger.info("Stream changed for {}", req.params(":id"))
       val json = new JsonObject(req.body())
       val dataArray = json.getJsonArray("data")
       if(dataArray.size() > 0) {
@@ -85,7 +86,6 @@ class API(val mewna: Mewna) {
           logger.info("Got stream update: {}", obj)
           // Stream start
           val id = obj.getString("user_id")
-          
           mewna.redis(redis => {
             if(!redis.exists("telepathy:streamer:live:" + id)) {
               mewna.twitchRatelimiter.queueLookupUser(id,
@@ -101,7 +101,7 @@ class API(val mewna: Mewna) {
         }
       } else {
         // Stream end
-        val id = req.params(":id")
+        val id =
         
         mewna.redis(redis => {
           if(redis.exists("telepathy:streamer:live:" + id)) {
