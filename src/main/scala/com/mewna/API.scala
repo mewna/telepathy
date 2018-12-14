@@ -84,21 +84,37 @@ class API(val mewna: Mewna) {
         if(obj.getString("type").equals("live")) {
           logger.info("Got stream update: {}", obj)
           // Stream start
-          mewna.twitchRatelimiter.queueLookupUser(obj.getString("user_id"),
-            (_, streamer) => {
-              val streamData = new JsonObject().put("streamData", obj).put("streamer", streamer)
-              mewna.eventManager.pushBackendEvent("TWITCH_STREAM_START", streamData)
-              logger.info("TWITCH_STREAM_START for {} ({})", streamer.getString("login"): String, streamer.getString("id"): Any)
-            })
+          val id = obj.getString("user_id")
+          
+          mewna.redis(redis => {
+            if(!redis.exists("telepathy:streamer:live:" + id)) {
+              mewna.twitchRatelimiter.queueLookupUser(id,
+                (_, streamer) => {
+                  val streamData = new JsonObject().put("streamData", obj).put("streamer", streamer)
+                  mewna.eventManager.pushBackendEvent("TWITCH_STREAM_START", streamData)
+                  logger.info("TWITCH_STREAM_START for {} ({})", streamer.getString("login"): String, streamer.getString("id"): Any)
+                  redis.set("telepathy:streamer:live:" + id, "LIVE:" + System.currentTimeMillis())
+                })
+            }
+          })
+  
         }
       } else {
         // Stream end
-        mewna.twitchRatelimiter.queueLookupUser(req.params(":id"),
-          (_, streamer) => {
-            val streamData = new JsonObject().put("streamer", streamer)
-            mewna.eventManager.pushBackendEvent("TWITCH_STREAM_END", streamData)
-            logger.info("TWITCH_STREAM_END for {} ({})", streamer.getString("login"): String, streamer.getString("id"): Any)
-          })
+        val id = req.params(":id")
+        
+        mewna.redis(redis => {
+          if(redis.exists("telepathy:streamer:live:" + id)) {
+            mewna.twitchRatelimiter.queueLookupUser(id,
+              (_, streamer) => {
+                val streamData = new JsonObject().put("streamer", streamer)
+                mewna.eventManager.pushBackendEvent("TWITCH_STREAM_END", streamData)
+                logger.info("TWITCH_STREAM_END for {} ({})", streamer.getString("login"): String, streamer.getString("id"): Any)
+                redis.del("telepathy:streamer:live:" + id)
+              })
+          }
+        })
+        
       }
     }
   }
