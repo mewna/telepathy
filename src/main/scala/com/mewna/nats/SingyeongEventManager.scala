@@ -49,7 +49,7 @@ class SingyeongEventManager(val mewna: Mewna) {
   }
   
   private def pushEvent[T](kind: String, data: T): Unit = {
-    val event: JsonObject = new JsonObject().put("t", kind).put("ts", System.currentTimeMillis()).put("d", data)
+    val event: JsonObject = new JsonObject().put("type", kind).put("ts", System.currentTimeMillis()).put("data", data)
     try {
       mewna.singyeong.send("mewna-backend", new QueryBuilder().build(), event)
     } catch {
