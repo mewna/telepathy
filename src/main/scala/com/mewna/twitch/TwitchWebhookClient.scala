@@ -65,7 +65,16 @@ final class TwitchWebhookClient(val mewna: Mewna) {
         if(hookMap.isDefined) {
           val map = hookMap.get
           
-          map.toSeq.map(x => (x._1, x._2.toLong)).foreach(x => {
+          map.toSeq.map(x => (x._1, x._2.toLong))
+            .filter(p => {
+              val (_, time) = p
+              var needs = false
+              if(time - System.currentTimeMillis() <= TimeUnit.DAYS.toMillis(1)) {
+                needs = true
+              }
+              needs
+            })
+            .foreach(x => {
             val (idMode, _) = x
             val strings = idMode.split(":")
             val id = strings(0)
@@ -144,7 +153,7 @@ final class TwitchWebhookClient(val mewna: Mewna) {
       .put("hub.lease_seconds", leaseSeconds)
       .put("hub.secret", "") // TODO
     val res = client.newCall(new Request.Builder().url(TwitchWebhookClient.WEBHOOK_HUB)
-      .post(RequestBody.create(TwitchWebhookClient.JSON, data.toString()))
+      .post(RequestBody.create(TwitchWebhookClient.JSON, data.toString))
       //.header("Client-ID", System.getenv("TWITCH_CLIENT"))
       .header("Authorization", "Bearer " + System.getenv("TWITCH_OAUTH").replace("oauth:", ""))
       .build()).execute()
