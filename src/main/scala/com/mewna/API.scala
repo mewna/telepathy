@@ -77,13 +77,13 @@ class API(val mewna: Mewna) {
    */
   private def handleStreamUpDown(req: Request): Unit = {
     if(req.body().length > 0) {
-      logger.info("Stream changed for {}", req.params(":id"))
+      logger.debug("Stream changed for {}", req.params(":id"))
       val json = new JsonObject(req.body())
       val dataArray = json.getJsonArray("data")
       if(dataArray.size() > 0) {
         val obj = dataArray.getJsonObject(0)
         if(obj.getString("type").equals("live")) {
-          logger.info("Got stream update: {}", obj)
+          logger.debug("Got stream update: {}", obj)
           // Stream start
           val id = obj.getString("user_id")
           mewna.redis(redis => {
